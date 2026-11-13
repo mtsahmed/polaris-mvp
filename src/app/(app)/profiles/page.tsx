@@ -35,42 +35,42 @@ export default async function ProfilesPage() {
         title="Profiles"
         description="Each profile is a business or talent you represent. Polaris builds its ICP, research and pitches from what you put here."
         actions={
-          <Link href="/profiles/new" className={buttonVariants()}>
+          <Link href="/profiles/new" className={buttonVariants({ variant: "brand", size: "lg" })}>
             <Plus /> New profile
           </Link>
         }
       />
 
       {profiles.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-12 text-center">
-          <h2 className="font-heading text-2xl">No profiles yet</h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+        <div className="rounded-3xl border border-dashed bg-card px-8 py-16 text-center">
+          <h2 className="text-3xl font-semibold tracking-tight">No profiles yet</h2>
+          <p className="mx-auto mt-3 max-w-md text-lg leading-relaxed text-muted-foreground">
             Start with one media or creative business. Add its website, a few documents, and Polaris
             drafts the profile with sources for every claim.
           </p>
-          <Link href="/profiles/new" className={buttonVariants({ className: "mt-6" })}>
+          <Link href="/profiles/new" className={buttonVariants({ variant: "brand", size: "lg", className: "mt-8" })}>
             <Plus /> Create the first profile
           </Link>
         </div>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="grid gap-4">
           {profiles.map((p) => {
             const typeLabel = PROFILE_TYPES.find((t) => t.value === p.type)?.label ?? p.type;
             const hasApprovedIcp = p.icps.some((i) => i.approved);
             const sourceCount = p.profile_sources[0]?.count ?? 0;
             return (
-              <li key={p.id}>
+              <li key={p.id} className="min-w-0">
                 <Link
                   href={`/profiles/${p.id}`}
-                  className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-6"
+                  className="group flex flex-col gap-3 rounded-2xl border bg-card px-6 py-5 shadow-[0_1px_2px_rgb(10_15_28/0.04)] transition-all hover:-translate-y-px hover:border-brand/40 hover:shadow-[0_10px_30px_-14px_rgb(196_0_106/0.35)] sm:flex-row sm:items-center sm:gap-8"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">{p.name}</div>
-                    <div className="truncate text-sm text-muted-foreground">
+                    <div className="font-heading text-xl font-semibold tracking-tight">{p.name}</div>
+                    <div className="mt-1 truncate text-base text-muted-foreground">
                       {p.positioning ?? "No positioning yet"}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <Badge variant="outline">{typeLabel}</Badge>
                     <span>{sourceCount} {sourceCount === 1 ? "source" : "sources"}</span>
                     {hasApprovedIcp ? (

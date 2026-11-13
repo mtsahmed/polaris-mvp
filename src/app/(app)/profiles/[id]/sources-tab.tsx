@@ -1,4 +1,4 @@
-import { FileText, Globe, MessageSquareText } from "lucide-react";
+import { ClipboardList, FileText, FileUp, Globe, Library, Link2, MessageSquareText } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { Field } from "@/components/field";
@@ -32,7 +32,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Sources</CardTitle>
+            <CardTitle icon={Library}>Sources</CardTitle>
             <CardDescription>Everything Polaris may use to describe this profile. Nothing else is used.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -44,18 +44,18 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
                   const Icon = ICONS[s.kind];
                   return (
                     <li key={s.id} className="flex items-center gap-3 py-2.5">
-                      <span className="w-6 text-xs tabular-nums text-muted-foreground">S{i + 1}</span>
+                      <span className="w-7 text-sm tabular-nums text-muted-foreground">S{i + 1}</span>
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
                         {s.kind === "url" ? (
-                          <a href={s.location} target="_blank" rel="noreferrer" className="block truncate text-sm hover:underline">
+                          <a href={s.location} target="_blank" rel="noreferrer" className="block truncate text-base hover:underline">
                             {s.title ? `${s.title} · ` : ""}
                             {s.location.replace(/^https?:\/\//, "")}
                           </a>
                         ) : (
-                          <div className="truncate text-sm">{s.title ?? s.location}</div>
+                          <div className="truncate text-base">{s.title ?? s.location}</div>
                         )}
-                        {s.status === "failed" && <div className="text-xs text-destructive">{s.error}</div>}
+                        {s.status === "failed" && <div className="text-sm text-destructive">{s.error}</div>}
                       </div>
                       <ConfirmSubmit action={deleteSource.bind(null, profileId, s.id)} label="Remove" confirmLabel="Remove" size="xs" />
                     </li>
@@ -68,7 +68,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
 
         <Card>
           <CardHeader>
-            <CardTitle>Add a link</CardTitle>
+            <CardTitle icon={Link2}>Add a link</CardTitle>
             <CardDescription>Portfolio, press coverage, case studies, media kit pages.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -86,7 +86,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
 
         <Card>
           <CardHeader>
-            <CardTitle>Upload a file</CardTitle>
+            <CardTitle icon={FileUp}>Upload a file</CardTitle>
             <CardDescription>PDF, .txt or .md, up to 10 MB. Media kits and credentials decks work well.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -97,7 +97,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
 
       <Card className="self-start">
         <CardHeader>
-          <CardTitle>Owner questionnaire</CardTitle>
+          <CardTitle icon={ClipboardList}>Owner questionnaire</CardTitle>
           <CardDescription>
             Fills gaps the website does not cover. Answers are stored as one source and replaced when you save again.
           </CardDescription>

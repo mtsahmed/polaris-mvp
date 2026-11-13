@@ -133,7 +133,8 @@ export async function updateProfile(
       strengths: lines(formData.get("strengths")),
       objectives: lines(formData.get("objectives")),
       voice_samples: (typeof formData.get("voice_samples") === "string"
-        ? (formData.get("voice_samples") as string).split(/\n-{3,}\n/)
+        ? // Browsers submit textarea line breaks as \r\n, so accept both.
+          (formData.get("voice_samples") as string).split(/\r?\n[ \t]*-{3,}[ \t]*\r?\n/)
         : []
       )
         .map((s) => s.trim())

@@ -46,7 +46,7 @@ export function LoginForm({ next }: { next: string }) {
         </Alert>
       )}
 
-      <Button type="submit" className="h-10 w-full" disabled={pending}>
+      <Button type="submit" variant="brand" size="lg" className="w-full" disabled={pending}>
         {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
       </Button>
 

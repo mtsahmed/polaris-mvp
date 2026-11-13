@@ -48,7 +48,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
   const counts: Partial<Record<TabKey, number>> = { sources: sources?.length ?? 0 };
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <div className="mb-4 text-sm">
         <Link href="/profiles" className="text-muted-foreground hover:text-foreground">
           ← Profiles
@@ -74,21 +74,21 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
         actions={<ConfirmSubmit action={deleteProfile.bind(null, profile.id)} label="Delete profile" />}
       />
 
-      <nav className="mb-8 flex gap-1 overflow-x-auto border-b" aria-label="Profile sections">
+      <nav className="mb-8 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--border)]" aria-label="Profile sections">
         {TABS.map((t) => (
           <Link
             key={t.key}
             href={`/profiles/${profile.id}?tab=${t.key}`}
             aria-current={tab === t.key ? "page" : undefined}
             className={cn(
-              "-mb-px shrink-0 border-b-2 px-3 py-2 text-sm transition-colors",
+              "shrink-0 border-b-2 px-4 py-3 text-base font-medium transition-colors",
               tab === t.key
-                ? "border-gold font-medium text-foreground"
+                ? "border-brand text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
-            {counts[t.key] !== undefined && <span className="ml-1.5 text-xs text-muted-foreground">{counts[t.key]}</span>}
+            {counts[t.key] !== undefined && <span className="ml-2 text-sm text-muted-foreground">{counts[t.key]}</span>}
           </Link>
         ))}
       </nav>

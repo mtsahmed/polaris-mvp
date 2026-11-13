@@ -7,22 +7,20 @@ export function PageHeader({
   actions,
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="space-y-1.5">
-        {eyebrow && (
-          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            {eyebrow}
-          </div>
+    <header className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="space-y-3">
+        {eyebrow && <div className="kicker">{eyebrow}</div>}
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{title}</h1>
+        {description && (
+          <p className="max-w-[62ch] text-lg leading-relaxed text-muted-foreground">{description}</p>
         )}
-        <h1 className="font-heading text-4xl tracking-tight">{title}</h1>
-        {description && <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap gap-3">{actions}</div>}
     </header>
   );
 }

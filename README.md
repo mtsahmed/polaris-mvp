@@ -50,7 +50,8 @@ npm run lint    # ESLint
 - `src/proxy.ts` refreshes the Supabase session on every request and sends signed-out users to `/login`.
 - `src/lib/session.ts` resolves the signed-in user and their active workspace; pages call `requireSession()`.
 - `src/app/(app)/profiles/actions.ts` holds every profile, source, intelligence and ICP action.
-- `src/lib/ai/generate.ts` runs every AI job: Claude first (`providers/anthropic.ts`), OpenAI only if Claude is unavailable (`providers/openai.ts`). Each job must return JSON matching a schema. Refusals and bad answers are reported, never re-sent to the other vendor. Every attempt is logged. List prices for the cost log are in `claude.ts` (Claude) and `providers/openai.ts` (OpenAI); update them when providers change prices.
+- The **AI model** picker in the sidebar chooses the model for every AI job (stored per browser). The list lives in `src/lib/ai/models.ts`; add or rename models there. "Auto" keeps the default routing below; a picked model runs on its own and reports an error rather than switching vendor.
+- `src/lib/ai/generate.ts` runs every AI job: on Auto, Claude first (`providers/anthropic.ts`), OpenAI only if Claude is unavailable (`providers/openai.ts`). Each job must return JSON matching a schema. Refusals and bad answers are reported, never re-sent to the other vendor. Every attempt is logged. List prices for the cost log are in `claude.ts` (Claude) and `providers/openai.ts` (OpenAI); update them when providers change prices.
 - For OpenAI, which cannot read a URL itself, `fetch-page.ts` downloads source pages on the server and refuses private or internal network addresses.
 - `src/config/brand.ts` is the only place the product name is set (roadmap 3.4).
 - Uploads go straight from the browser to Supabase Storage under `<org id>/<profile id>/…`; storage rules reject any other path.

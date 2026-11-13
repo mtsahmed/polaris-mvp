@@ -69,17 +69,17 @@ export default async function UsagePage() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">This month (UTC)</div>
-            <div className="mt-1 font-heading text-4xl tabular-nums">{usd.format(monthCost)}</div>
-            <div className="text-xs text-muted-foreground">estimated</div>
+            <div className="text-sm font-medium text-muted-foreground">This month (UTC)</div>
+            <div className="mt-2 font-heading text-4xl font-semibold tracking-tight tabular-nums">{usd.format(monthCost)}</div>
+            <div className="mt-1 text-sm text-muted-foreground">estimated</div>
           </CardContent>
         </Card>
         {[...totals.entries()].map(([provider, t]) => (
           <Card key={provider}>
             <CardContent className="pt-6">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">{provider}</div>
-              <div className="mt-1 font-heading text-4xl tabular-nums">{usd.format(t.cost)}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-sm font-medium text-muted-foreground">{provider}</div>
+              <div className="mt-2 font-heading text-4xl font-semibold tracking-tight tabular-nums">{usd.format(t.cost)}</div>
+              <div className="mt-1 text-sm text-muted-foreground">
                 {num.format(t.calls)} calls{t.credits ? ` · ${num.format(t.credits)} credits` : ""}
               </div>
             </CardContent>
@@ -107,10 +107,10 @@ export default async function UsagePage() {
                 <TableBody>
                   {recent.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleString("en-US")}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">{new Date(r.created_at).toLocaleString("en-US")}</TableCell>
                       <TableCell>{r.provider}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.endpoint}</TableCell>
-                      <TableCell className="text-right tabular-nums text-xs">
+                      <TableCell className="font-mono text-sm">{r.endpoint}</TableCell>
+                      <TableCell className="text-right tabular-nums text-sm">
                         {r.input_tokens != null ? `${num.format(r.input_tokens)} / ${num.format(r.output_tokens ?? 0)}` : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">

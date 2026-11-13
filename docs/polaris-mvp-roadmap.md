@@ -31,6 +31,7 @@ A branded web app that takes one business or talent profile from **profile → I
 | Dropped or deferred | Gojiberry (dropped). Clay, branded PDF proposals, LinkedIn automation, CRM sync, billing (deferred) |
 | Maintenance | Owner with Claude Code; no developer assumed |
 | AI fallback (added 13 November 2026) | Claude stays the primary model. OpenAI is a fallback used only when Claude is unavailable (invalid key, no credit, rate limit, outage), never after a safety refusal. OpenAI models are tried in order: gpt-6.1-sol ($2 / $10 per million tokens), then gpt-5.5 ($5 / $30) only if gpt-6.1-sol is unavailable. Every attempt is logged with its provider, model and cost. On the OpenAI path Polaris downloads source pages itself, since OpenAI cannot read a given URL |
+| Model choice (added 13 November 2026) | A picker in the sidebar lets each user choose the AI model: Auto (the default, the Claude-first rule above) or one specific model from Anthropic (Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, Sonnet 5, Opus 5) or OpenAI (GPT 6 Astra, GPT 6.1 Sol, GPT 6.1 Terra, GPT 5.5, GPT 5.4). A chosen model runs on its own: if it is unavailable the job fails with the reason instead of switching vendor. The choice is stored per browser in a cookie. Every call is still logged with its model and cost |
 
 ## 3. Open points that need the owner's decision
 

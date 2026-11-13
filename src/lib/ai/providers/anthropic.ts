@@ -7,6 +7,11 @@ import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, ty
 
 const MAX_CONTINUATIONS = 4;
 
+// Server-side refusal fallbacks exist only on these models; Haiku 5.5 and Sonnet 5 have none.
+const SUPPORTS_FALLBACKS = new Set(["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
+// The newer web fetch tool (dynamic filtering) is not available on Haiku 5.5.
+const BASIC_WEB_FETCH = new Set(["claude-haiku-5-5"]);
+
 export function anthropicConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
 }
@@ -31,9 +36,12 @@ function describe(err: unknown): string {
   return err instanceof Error ? err.message : "Unknown error calling Claude.";
 }
 
-export async function runAnthropic<S extends z.ZodType>(req: StructuredRequest<S>): Promise<{ data: z.infer<S>; attempt: ProviderAttempt }> {
+export async function runAnthropic<S extends z.ZodType>(
+  req: StructuredRequest<S>,
+  requestedModel: string = CLAUDE_MODEL,
+): Promise<{ data: z.infer<S>; attempt: ProviderAttempt }> {
   const usage = emptyUsage();
-  const attempt = (ok: boolean, model = CLAUDE_MODEL, error?: string): ProviderAttempt => ({
+  const attempt = (ok: boolean, model = requestedModel, error?: string): ProviderAttempt => ({
     provider: "anthropic",
     model,
     ok,
@@ -56,25 +64,31 @@ export async function runAnthropic<S extends z.ZodType>(req: StructuredRequest<S
     : "";
   content.push({ type: "text", text: req.prompt + urlNote });
 
-  const tools: Anthropic.Beta.BetaToolUnion[] = req.urls?.length
-    ? [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: Math.min(req.urls.length + 2, 10), max_content_tokens: 40000 }]
-    : [];
+  const maxUses = Math.min((req.urls?.length ?? 0) + 2, 10);
+  const tools: Anthropic.Beta.BetaToolUnion[] = !req.urls?.length
+    ? []
+    : BASIC_WEB_FETCH.has(requestedModel)
+      ? [{ type: "web_fetch_20250910", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 }]
+      : [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 }];
+  const fallbackParams = SUPPORTS_FALLBACKS.has(requestedModel)
+    ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }
+    : {};
 
   const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content }];
 
   try {
     for (let i = 0; i <= MAX_CONTINUATIONS; i++) {
       const response = await claude().beta.messages.parse({
-        model: CLAUDE_MODEL,
+        model: requestedModel,
         max_tokens: req.maxTokens ?? 16000,
         system: req.system,
         messages,
         tools: tools.length ? tools : undefined,
-        // Opus 5.5 defaults to medium effort; set it explicitly per task.
+        // Opus 5.5 and Haiku 5.5 default to medium effort; set it explicitly per task.
         output_config: { effort: req.effort ?? "high", format: betaZodOutputFormat(req.schema) },
-        // On a safety decline the API retries on a fallback Claude model inside the same call.
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        // On a safety decline the API retries on a fallback Claude model inside the same call
+        // (only on models that support it).
+        ...fallbackParams,
       });
       addUsage(usage, response.usage);
 
@@ -93,11 +107,11 @@ export async function runAnthropic<S extends z.ZodType>(req: StructuredRequest<S
       }
       return { data: response.parsed_output as z.infer<S>, attempt: attempt(true, response.model) };
     }
-    throw new ProviderFailedError("Claude did not finish after several continuations.", attempt(false, CLAUDE_MODEL, "continuations"));
+    throw new ProviderFailedError("Claude did not finish after several continuations.", attempt(false, requestedModel, "continuations"));
   } catch (err) {
     if (err instanceof ProviderFailedError) throw err;
     const message = describe(err);
-    if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, CLAUDE_MODEL, message));
-    throw new ProviderFailedError(message, attempt(false, CLAUDE_MODEL, message));
+    if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, requestedModel, message));
+    throw new ProviderFailedError(message, attempt(false, requestedModel, message));
   }
 }

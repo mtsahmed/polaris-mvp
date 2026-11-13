@@ -18,12 +18,13 @@ export default async function OnboardingPage() {
   if ((count ?? 0) > 0) redirect("/profiles");
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
+    <main className="flex min-h-dvh items-center justify-center px-4 py-16">
+      <div className="w-full max-w-lg space-y-10">
         <BrandMark />
-        <div className="space-y-2">
-          <h1 className="font-heading text-4xl tracking-tight">Name your workspace</h1>
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-3">
+          <div className="kicker">Step 1 of 1</div>
+          <h1 className="text-4xl font-semibold tracking-tight">Name your workspace</h1>
+          <p className="text-lg leading-relaxed text-muted-foreground">
             A workspace holds your profiles, research and pipeline. Everyone you invite later sees the
             same workspace; nobody outside it can.
           </p>

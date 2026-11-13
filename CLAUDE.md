@@ -18,6 +18,7 @@ Update this section whenever a phase starts or finishes.
 - Next.js 16: use `proxy.ts` (not middleware), async `params`/`searchParams`/`cookies()`. Cache Components is off on purpose.
 - shadcn/ui here is the Base UI flavour: components take a `render` prop, not `asChild`. For links styled as buttons use `buttonVariants()` on `<Link>`.
 - Database changes go in a new file under `supabase/migrations/`; every new table needs `org_id`, the member-only RLS policy, and an explicit `grant ... to authenticated` (this Supabase project does not grant table access automatically).
-- AI calls go through `generateStructured()` in `src/lib/ai/generate.ts` (Claude first, OpenAI fallback only when Claude is unavailable, never after a refusal). Log `result.attempts` / `AiError.attempts` with `logProviderCall`.
+- AI calls go through `generateStructured()` in `src/lib/ai/generate.ts`. It uses the model picked in the sidebar (cookie `polaris_model`, catalog in `src/lib/ai/models.ts`); on Auto it runs Claude first, OpenAI fallback only when Claude is unavailable, never after a refusal. A picked model never silently switches to another. Log `result.attempts` / `AiError.attempts` with `logProviderCall`.
 - Never present mock or placeholder data as real. Unbuilt features stay visibly "planned".
 - Run `npx tsc --noEmit`, `npm run lint` and `npm run build` before calling work done.
+- The dev server sometimes keeps serving an old copy of `src/app/globals.css` after it changes. If a style change does not show, stop `npm run dev`, delete the `.next` folder and start it again.

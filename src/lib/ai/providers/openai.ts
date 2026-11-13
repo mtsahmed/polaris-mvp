@@ -11,11 +11,15 @@ import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, ty
 // Override the order with OPENAI_MODELS in .env.local, e.g. "gpt-6.1-sol,gpt-5.5".
 const DEFAULT_MODELS = ["gpt-6.1-sol", "gpt-5.5"];
 
-// List prices in USD per million tokens, supplied by the owner from openai.com/api/pricing
-// on 13 November 2026. cacheWrite is the 30-minute cache-write price where one exists.
+// List prices in USD per million tokens (Standard speed, short context), supplied by the owner
+// from OpenAI's pricing page on 13 November 2026 (screenshot: docs/OpenAI_Models_Pricing.png).
+// cacheWrite is the 30-minute cache-write price where one exists.
 const PRICING: Record<string, { input: number; cachedInput: number; output: number; cacheWrite?: number }> = {
+  "gpt-6-astra": { input: 10.0, cachedInput: 1.0, output: 50.0, cacheWrite: 12.5 },
   "gpt-6.1-sol": { input: 2.0, cachedInput: 0.1, output: 10.0, cacheWrite: 2.5 },
+  "gpt-6.1-terra": { input: 1.0, cachedInput: 0.05, output: 5.0, cacheWrite: 1.25 },
   "gpt-5.5": { input: 5.0, cachedInput: 0.5, output: 30.0 },
+  "gpt-5.4": { input: 2.5, cachedInput: 0.25, output: 15.0 },
 };
 
 export function openaiConfigured() {
@@ -144,12 +148,14 @@ export class OpenAIExhaustedError extends Error {
 }
 
 // Tries each configured model in order. Returns every attempt so all of them are logged.
+// `models` overrides the configured order, e.g. a single model the user picked.
 export async function runOpenAI<S extends z.ZodType>(
   req: StructuredRequest<S>,
+  models: string[] = openaiModels(),
 ): Promise<{ data: z.infer<S>; attempts: ProviderAttempt[] }> {
   const content = await buildContent(req);
   const attempts: ProviderAttempt[] = [];
-  for (const model of openaiModels()) {
+  for (const model of models) {
     try {
       const { data, attempt } = await runOneModel(model, req, content);
       attempts.push(attempt);

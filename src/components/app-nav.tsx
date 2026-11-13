@@ -16,7 +16,7 @@ const NAV = [
 export function AppNav() {
   const pathname = usePathname();
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-1.5">
       {NAV.map(({ href, label, icon: Icon, ready, when }) => {
         const active = ready && pathname.startsWith(href);
         if (!ready) {
@@ -25,11 +25,11 @@ export function AppNav() {
               key={label}
               aria-disabled="true"
               title={`Planned for ${when}`}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/35"
+              className="flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9375rem] text-sidebar-foreground/60"
             >
-              <Icon className="size-4" />
+              <Icon className="size-[18px]" />
               <span className="flex-1">{label}</span>
-              <span className="text-[10px] uppercase tracking-wider">{when}</span>
+              <span className="font-mono text-xs">{when}</span>
             </div>
           );
         }
@@ -38,13 +38,13 @@ export function AppNav() {
             key={label}
             href={href}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-3 rounded-full px-4 py-2.5 text-base font-medium transition-colors",
               active
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                : "text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
             )}
           >
-            <Icon className={cn("size-4", active && "text-sidebar-primary")} />
+            <Icon className={cn("size-[18px]", active && "text-sidebar-primary")} />
             {label}
           </Link>
         );

@@ -5,11 +5,17 @@ export const CLAUDE_MODEL = "claude-opus-5-5";
 
 // List prices (USD per million tokens) for cost estimates in the usage log.
 // Check https://platform.claude.com/docs/en/about-claude/pricing when they change.
+// Input/output and the Opus 5.5 and Sonnet 5.5 cache-read prices are Anthropic's published
+// rates; the other cache prices use the standard multipliers (read 0.1x, 5-minute write 1.25x).
+// Haiku 5.5 prices are for prompts up to 100K tokens; above that it is $0.50 / $2.50, so a
+// very large Haiku job is under-estimated here.
 const PRICING: Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }> = {
   "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
   "claude-opus-5": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
-  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 },
+  "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
 };
 const WEB_SEARCH_USD_PER_REQUEST = 10 / 1000; // web fetch has no per-use fee, only tokens
 

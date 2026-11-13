@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const display = Instrument_Serif({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: "400",
-});
+// TiffanyAI brand type: Space Grotesk headings, Inter body, JetBrains Mono labels.
+const sans = Inter({ variable: "--font-brand-sans", subsets: ["latin"] });
+const display = Space_Grotesk({ variable: "--font-brand-display", subsets: ["latin"], weight: ["500", "600", "700"] });
+const mono = JetBrains_Mono({ variable: "--font-brand-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: brand.fullName, template: `%s · ${brand.productName}` },
@@ -23,9 +20,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
+      className={`${sans.variable} ${display.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
+        {/* Full-strength TiffanyAI brand gradient for section icons.
+            userSpaceOnUse in the icons' 24x24 grid, so straight lines are painted too. */}
+        <svg width="0" height="0" aria-hidden="true" focusable="false" className="absolute">
+          <defs>
+            <linearGradient id="brand-icon-gradient" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22">
+              <stop offset="0%" stopColor="#c4006a" />
+              <stop offset="58%" stopColor="#ff7a3d" />
+              <stop offset="100%" stopColor="#ffd700" />
+            </linearGradient>
+          </defs>
+        </svg>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Toaster richColors position="bottom-right" />

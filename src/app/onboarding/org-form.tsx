@@ -20,7 +20,7 @@ export function OrgForm() {
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
-      <Button type="submit" className="h-10 w-full" disabled={pending}>
+      <Button type="submit" variant="brand" size="lg" className="w-full" disabled={pending}>
         {pending ? "Creating…" : "Create workspace"}
       </Button>
     </form>
