@@ -79,7 +79,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
               <Field id="title" label="Label (optional)">
                 <Input id="title" name="title" placeholder="Case studies" />
               </Field>
-              <SubmitButton pendingLabel="Adding…">Add link</SubmitButton>
+              <SubmitButton variant="gradient-outline" pendingLabel="Adding…">Add link</SubmitButton>
             </ActionForm>
           </CardContent>
         </Card>
@@ -109,7 +109,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
                 <Textarea id={q.key} name={q.key} rows={3} defaultValue={answers[q.key] ?? ""} />
               </Field>
             ))}
-            <SubmitButton>Save answers</SubmitButton>
+            <SubmitButton variant="gradient-outline">Save answers</SubmitButton>
           </ActionForm>
         </CardContent>
       </Card>

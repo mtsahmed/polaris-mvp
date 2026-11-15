@@ -41,9 +41,9 @@ async function runChosen<S extends z.ZodType>(
   if (provider === "anthropic") {
     if (!anthropicConfigured()) throw new AiError(`${name} needs ANTHROPIC_API_KEY in .env.local.${hint}`, attempts);
     try {
-      const { data, attempt } = await runAnthropic(req, model);
+      const { data, attempt, seenUrls } = await runAnthropic(req, model);
       attempts.push(attempt);
-      return { data, provider: "anthropic", model: attempt.model, attempts };
+      return { data, provider: "anthropic", model: attempt.model, attempts, seenUrls };
     } catch (err) {
       if (err instanceof ProviderUnavailableError || err instanceof ProviderFailedError) attempts.push(err.attempt);
       const message = err instanceof Error ? err.message : "Claude failed.";
@@ -55,7 +55,7 @@ async function runChosen<S extends z.ZodType>(
   try {
     const result = await runOpenAI(req, [model]);
     attempts.push(...result.attempts);
-    return { data: result.data, provider: "openai", model, attempts };
+    return { data: result.data, provider: "openai", model, attempts, seenUrls: result.seenUrls };
   } catch (err) {
     if (err instanceof OpenAIExhaustedError) attempts.push(...err.attempts);
     const message = err instanceof Error ? err.message : "OpenAI failed.";
@@ -68,9 +68,9 @@ async function runAuto<S extends z.ZodType>(req: StructuredRequest<S>): Promise<
 
   if (anthropicConfigured()) {
     try {
-      const { data, attempt } = await runAnthropic(req);
+      const { data, attempt, seenUrls } = await runAnthropic(req);
       attempts.push(attempt);
-      return { data, provider: "anthropic", model: attempt.model, attempts };
+      return { data, provider: "anthropic", model: attempt.model, attempts, seenUrls };
     } catch (err) {
       if (err instanceof ProviderUnavailableError || err instanceof ProviderFailedError) attempts.push(err.attempt);
       if (!(err instanceof ProviderUnavailableError)) {
@@ -84,7 +84,7 @@ async function runAuto<S extends z.ZodType>(req: StructuredRequest<S>): Promise<
     try {
       const result = await runOpenAI(req);
       attempts.push(...result.attempts);
-      return { data: result.data, provider: "openai", model: result.attempts.at(-1)!.model, attempts };
+      return { data: result.data, provider: "openai", model: result.attempts.at(-1)!.model, attempts, seenUrls: result.seenUrls };
     } catch (err) {
       if (err instanceof OpenAIExhaustedError) attempts.push(...err.attempts);
       const claudeNote = attempts.find((a) => a.provider === "anthropic")?.error;

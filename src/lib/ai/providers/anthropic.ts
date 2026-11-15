@@ -39,8 +39,9 @@ function describe(err: unknown): string {
 export async function runAnthropic<S extends z.ZodType>(
   req: StructuredRequest<S>,
   requestedModel: string = CLAUDE_MODEL,
-): Promise<{ data: z.infer<S>; attempt: ProviderAttempt }> {
+): Promise<{ data: z.infer<S>; attempt: ProviderAttempt; seenUrls: string[] }> {
   const usage = emptyUsage();
+  const seen = new Set<string>();
   const attempt = (ok: boolean, model = requestedModel, error?: string): ProviderAttempt => ({
     provider: "anthropic",
     model,
@@ -48,6 +49,7 @@ export async function runAnthropic<S extends z.ZodType>(
     inputTokens: usage.inputTokens + usage.cacheReadTokens + usage.cacheWriteTokens,
     outputTokens: usage.outputTokens,
     costUsd: estimateCostUsd(model, usage),
+    searches: usage.webSearches,
     error,
   });
 
@@ -64,12 +66,25 @@ export async function runAnthropic<S extends z.ZodType>(
     : "";
   content.push({ type: "text", text: req.prompt + urlNote });
 
-  const maxUses = Math.min((req.urls?.length ?? 0) + 2, 10);
-  const tools: Anthropic.Beta.BetaToolUnion[] = !req.urls?.length
-    ? []
-    : BASIC_WEB_FETCH.has(requestedModel)
-      ? [{ type: "web_fetch_20250910", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 }]
-      : [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 }];
+  const basic = BASIC_WEB_FETCH.has(requestedModel);
+  const tools: Anthropic.Beta.BetaToolUnion[] = [];
+  if (req.urls?.length || req.webSearch) {
+    // With web search on, Claude may also open pages it found, so allow a few more fetches.
+    const maxUses = Math.min((req.urls?.length ?? 0) + 2 + (req.webSearch ? req.webSearch.maxUses : 0), 12);
+    tools.push(
+      basic
+        ? { type: "web_fetch_20250910", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 }
+        : { type: "web_fetch_20260209", name: "web_fetch", max_uses: maxUses, max_content_tokens: 40000 },
+    );
+  }
+  if (req.webSearch) {
+    const maxUses = req.webSearch.maxUses;
+    tools.push(
+      basic
+        ? { type: "web_search_20250305", name: "web_search", max_uses: maxUses }
+        : { type: "web_search_20260209", name: "web_search", max_uses: maxUses },
+    );
+  }
   const fallbackParams = SUPPORTS_FALLBACKS.has(requestedModel)
     ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }
     : {};
@@ -91,6 +106,7 @@ export async function runAnthropic<S extends z.ZodType>(
         ...fallbackParams,
       });
       addUsage(usage, response.usage);
+      collectUrls(response.content, seen);
 
       if (response.stop_reason === "pause_turn") {
         messages.push({ role: "assistant", content: response.content });
@@ -105,7 +121,11 @@ export async function runAnthropic<S extends z.ZodType>(
       if (!response.parsed_output) {
         throw new ProviderFailedError("Claude's answer did not match the expected format.", attempt(false, response.model, "parse"));
       }
-      return { data: response.parsed_output as z.infer<S>, attempt: attempt(true, response.model) };
+      return {
+        data: response.parsed_output as z.infer<S>,
+        attempt: attempt(true, response.model),
+        seenUrls: [...seen],
+      };
     }
     throw new ProviderFailedError("Claude did not finish after several continuations.", attempt(false, requestedModel, "continuations"));
   } catch (err) {
@@ -113,5 +133,16 @@ export async function runAnthropic<S extends z.ZodType>(
     const message = describe(err);
     if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, requestedModel, message));
     throw new ProviderFailedError(message, attempt(false, requestedModel, message));
+  }
+}
+
+// Records every page Claude fetched and every search result it was shown.
+function collectUrls(content: Anthropic.Beta.BetaContentBlock[], seen: Set<string>) {
+  for (const block of content) {
+    if (block.type === "web_search_tool_result" && Array.isArray(block.content)) {
+      for (const r of block.content) if (r.type === "web_search_result") seen.add(r.url);
+    } else if (block.type === "web_fetch_tool_result" && block.content.type === "web_fetch_result") {
+      seen.add(block.content.url);
+    }
   }
 }

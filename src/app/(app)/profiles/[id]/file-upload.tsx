@@ -54,7 +54,7 @@ export function FileUpload({ profileId }: { profileId: string }) {
         aria-label="File"
         onChange={() => setError(null)}
       />
-      <Button type="button" onClick={upload} disabled={busy}>
+      <Button type="button" variant="gradient-outline" onClick={upload} disabled={busy}>
         {busy ? "Uploading…" : "Upload"}
       </Button>
       {error && (

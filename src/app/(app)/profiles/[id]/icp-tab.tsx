@@ -45,7 +45,7 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
             </CardDescription>
           </div>
           <ActionForm action={draftIcpWithClaude.bind(null, profile.id)}>
-            <SubmitButton pendingLabel="Drafting…">
+            <SubmitButton variant="gradient-outline" pendingLabel="Drafting…">
               <Sparkles /> Draft with AI
             </SubmitButton>
           </ActionForm>
@@ -68,7 +68,7 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                 <Textarea id="notes" name="notes" rows={5} defaultValue={latest?.notes ?? ""} className={ICP_BOX} />
               </Field>
             </div>
-            <SubmitButton>Save draft</SubmitButton>
+            <SubmitButton variant="gradient-outline">Save draft</SubmitButton>
           </ActionForm>
 
           {latest && !latest.approved && (
@@ -80,7 +80,7 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                 Approving v{latest.version} records you as the approver and makes it the ICP used for discovery.
                 Approved versions cannot be edited.
               </p>
-              <SubmitButton pendingLabel="Approving…" className="shrink-0">
+              <SubmitButton variant="gradient-outline" pendingLabel="Approving…" className="shrink-0">
                 <CheckCircle2 /> Approve v{latest.version}
               </SubmitButton>
             </form>

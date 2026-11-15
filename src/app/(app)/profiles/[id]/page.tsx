@@ -2,22 +2,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmSubmit } from "@/components/confirm-submit";
+import { NextAction } from "@/components/next-action";
+import { FollowProfile } from "@/components/profile-switcher";
+import { activeProfile } from "@/lib/profile-selection";
+import { followProfile } from "../../profile-actions";
 import { PageHeader } from "@/components/page-header";
+import { PenLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { PROFILE_TYPES, type Icp, type Profile, type ProfileSource } from "@/lib/types";
 import { deleteProfile } from "../actions";
 import { IcpTab } from "./icp-tab";
-import { IntelligenceTab } from "./intelligence-tab";
+import { InsightsTab } from "./insights-tab";
 import { OverviewTab } from "./overview-tab";
 import { SourcesTab } from "./sources-tab";
 
 const TABS = [
   { key: "overview", label: "Profile" },
   { key: "sources", label: "Sources" },
-  { key: "intelligence", label: "Intelligence" },
+  { key: "insights", label: "Insights" },
   { key: "icp", label: "ICP" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -42,6 +48,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
     supabase.from("icps").select("*").eq("profile_id", id).order("version", { ascending: false }).returns<Icp[]>(),
   ]);
   if (!profile) notFound();
+  const { active } = await activeProfile();
 
   const typeLabel = PROFILE_TYPES.find((t) => t.value === profile.type)?.label ?? profile.type;
   const approvedIcp = icps?.find((i) => i.approved);
@@ -49,6 +56,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
 
   return (
     <div className="mx-auto max-w-7xl">
+      <FollowProfile profileId={profile.id} activeId={active?.id ?? null} follow={followProfile} />
       <div className="mb-4 text-sm">
         <Link href="/profiles" className="text-muted-foreground hover:text-foreground">
           ← Profiles
@@ -71,7 +79,14 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
             )}
           </span>
         }
-        actions={<ConfirmSubmit action={deleteProfile.bind(null, profile.id)} label="Delete profile" />}
+        actions={
+          <>
+            <Link href={`/pitch?profile=${profile.id}`} className={buttonVariants({ variant: "outline" })}>
+              <PenLine /> New pitch
+            </Link>
+            <ConfirmSubmit action={deleteProfile.bind(null, profile.id)} label="Delete profile" />
+          </>
+        }
       />
 
       <nav className="mb-8 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--border)]" aria-label="Profile sections">
@@ -95,8 +110,10 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
 
       {tab === "overview" && <OverviewTab profile={profile} />}
       {tab === "sources" && <SourcesTab profileId={profile.id} sources={sources ?? []} />}
-      {tab === "intelligence" && <IntelligenceTab profile={profile} sourceCount={sources?.length ?? 0} />}
+      {tab === "insights" && <InsightsTab profile={profile} sourceCount={sources?.length ?? 0} />}
       {tab === "icp" && <IcpTab profile={profile} icps={icps ?? []} />}
+
+      <NextAction current={tab === "icp" ? "icp" : "profile"} profileId={profile.id} />
     </div>
   );
 }

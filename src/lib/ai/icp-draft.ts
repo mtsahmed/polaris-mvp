@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { Profile } from "@/lib/types";
 import { generateStructured } from "./generate";
+import { profileSummary } from "./profile-summary";
 
 const IcpSchema = z.object({
   industries: z.array(z.string()).describe("Industries or verticals of companies to approach."),
@@ -19,18 +20,7 @@ const SYSTEM = `You draft an ideal customer profile (ICP) for Polaris: the kinds
 Base the ICP only on the profile you are given. Be specific enough that a researcher could search for matching companies. Where the profile is thin, keep the ICP narrow and name the assumption in notes rather than inventing detail. The owner edits and approves this draft before it is used.`;
 
 export async function draftIcp(profile: Profile) {
-  const summary = [
-    `Name: ${profile.name}`,
-    `Type: ${profile.type}`,
-    profile.website && `Website: ${profile.website}`,
-    profile.positioning && `Positioning: ${profile.positioning}`,
-    profile.services.length && `Services: ${profile.services.join("; ")}`,
-    profile.audience && `Audience: ${profile.audience}`,
-    profile.strengths.length && `Strengths: ${profile.strengths.join("; ")}`,
-    profile.objectives.length && `Objectives: ${profile.objectives.join("; ")}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const summary = profileSummary(profile);
 
   return generateStructured({
     task: "icp-draft",

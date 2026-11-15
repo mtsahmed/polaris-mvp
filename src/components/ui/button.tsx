@@ -12,6 +12,9 @@ const buttonVariants = cva(
           "bg-brand-gradient-button text-brand-ink shadow-[0_8px_24px_-8px_rgb(196_0_106/0.45)] hover:brightness-105 hover:shadow-[0_10px_28px_-8px_rgb(196_0_106/0.55)]",
         brand:
           "bg-brand-gradient-button text-brand-ink shadow-[0_8px_24px_-8px_rgb(196_0_106/0.45)] hover:brightness-105 hover:shadow-[0_10px_28px_-8px_rgb(196_0_106/0.55)]",
+        // Secondary actions that still matter (re-run a step, save, choose): brand-gradient outline.
+        "gradient-outline":
+          "gradient-outline border-2 text-foreground shadow-[0_6px_18px_-10px_rgb(196_0_106/0.35)] hover:shadow-[0_8px_22px_-10px_rgb(196_0_106/0.5)] [&_svg]:text-brand",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

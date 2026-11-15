@@ -1,18 +1,23 @@
 import { LogOut } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
+import { Journey } from "@/components/journey";
 import { ModelPicker } from "@/components/model-picker";
+import { ProfileSwitcher } from "@/components/profile-switcher";
+import { activeProfile } from "@/lib/profile-selection";
 import { anthropicConfigured } from "@/lib/ai/providers/anthropic";
 import { openaiConfigured } from "@/lib/ai/providers/openai";
 import { selectedModelId } from "@/lib/ai/selection";
 import { signOut } from "@/app/login/actions";
 import { switchOrganization } from "@/app/onboarding/actions";
 import { setModel } from "./model-actions";
+import { setActiveProfile } from "./profile-actions";
 import { requireSession } from "@/lib/session";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
   const model = await selectedModelId();
+  const { profiles, active } = await activeProfile();
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -44,6 +49,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           )}
         </div>
 
+        {active && profiles.length > 1 && (
+          <ProfileSwitcher profiles={profiles} value={active.id} setProfile={setActiveProfile} />
+        )}
+
         <div className="relative">
           <AppNav />
         </div>
@@ -70,7 +79,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </aside>
 
       <main className="min-w-0 flex-1 px-4 py-10 sm:px-8 lg:px-14 lg:py-14">
-        <div className="mx-auto w-full max-w-7xl">{children}</div>
+        <div className="mx-auto w-full max-w-7xl">
+          <Journey />
+          {children}
+        </div>
       </main>
     </div>
   );

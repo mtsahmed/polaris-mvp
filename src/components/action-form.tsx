@@ -6,22 +6,29 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/lib/action-state";
 
-type Variant = "default" | "outline" | "secondary" | "ghost" | "destructive";
+type Variant = "default" | "gradient-outline" | "outline" | "secondary" | "ghost" | "destructive";
 
 export function SubmitButton({
   children,
   pendingLabel,
   variant,
   className,
+  name,
+  value,
+  disabled,
 }: {
   children: ReactNode;
   pendingLabel?: string;
   variant?: Variant;
   className?: string;
+  // For forms with several submit buttons (the clicked one's name and value are submitted).
+  name?: string;
+  value?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} variant={variant} className={className}>
+    <Button type="submit" disabled={pending || disabled} variant={variant} className={className} name={name} value={value}>
       {pending ? (pendingLabel ?? "Saving…") : children}
     </Button>
   );

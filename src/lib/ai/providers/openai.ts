@@ -41,6 +41,10 @@ function costUsd(model: string, u: { input: number; cached: number; cacheWrite: 
   return (uncached * p.input + u.cached * p.cachedInput + u.cacheWrite * (p.cacheWrite ?? p.input) + u.output * p.output) / 1_000_000;
 }
 
+function withSearch(cost: number | null, searches: number): number | null {
+  return cost === null ? null : cost + searches * WEB_SEARCH_USD_PER_CALL;
+}
+
 let client: OpenAI | null = null;
 function openai() {
   client ??= new OpenAI();
@@ -68,7 +72,14 @@ function describe(err: unknown, model: string): string {
   return err instanceof Error ? err.message : "Unknown error calling OpenAI.";
 }
 
-async function buildContent<S extends z.ZodType>(req: StructuredRequest<S>): Promise<ResponseInputContent[]> {
+// OpenAI's web search price is not in the owner's pricing screenshot. This assumes $10 per
+// 1,000 searches (OpenAI's published tool rate when this was written); check it before relying on it.
+const WEB_SEARCH_USD_PER_CALL = 10 / 1000;
+
+async function buildContent<S extends z.ZodType>(
+  req: StructuredRequest<S>,
+  seen: Set<string>,
+): Promise<ResponseInputContent[]> {
   // OpenAI has no "read this URL" tool, so Polaris downloads each source page itself.
   const fetchNotes: string[] = [];
   const content: ResponseInputContent[] = [];
@@ -78,9 +89,13 @@ async function buildContent<S extends z.ZodType>(req: StructuredRequest<S>): Pro
     if (!page.ok) {
       fetchNotes.push(`${u.label} (${u.url}) could not be read: ${page.error}`);
     } else if (page.isPdf) {
+      seen.add(u.url);
+      seen.add(page.url);
       content.push({ type: "input_file", filename: `${u.label}.pdf`, file_data: `data:application/pdf;base64,${page.base64}` });
       pageBlocks.push(`${u.label} (web PDF, attached): ${u.url}`);
     } else {
+      seen.add(u.url);
+      seen.add(page.url);
       pageBlocks.push(`<source label="${u.label}" url="${page.url}" title="${page.title ?? ""}">\n${page.text}\n</source>`);
     }
   }
@@ -97,15 +112,17 @@ async function runOneModel<S extends z.ZodType>(
   model: string,
   req: StructuredRequest<S>,
   content: ResponseInputContent[],
+  seen: Set<string>,
 ): Promise<{ data: z.infer<S>; attempt: ProviderAttempt }> {
-  const u = { input: 0, cached: 0, cacheWrite: 0, output: 0 };
+  const u = { input: 0, cached: 0, cacheWrite: 0, output: 0, searches: 0 };
   const attempt = (ok: boolean, error?: string): ProviderAttempt => ({
     provider: "openai",
     model,
     ok,
     inputTokens: u.input,
     outputTokens: u.output,
-    costUsd: costUsd(model, u),
+    costUsd: withSearch(costUsd(model, u), u.searches),
+    searches: u.searches,
     error,
   });
 
@@ -117,7 +134,27 @@ async function runOneModel<S extends z.ZodType>(
       text: { format: zodTextFormat(req.schema, req.schemaName) },
       reasoning: { effort: req.effort === "max" ? "high" : (req.effort ?? "high") },
       max_output_tokens: req.maxTokens ?? 16000,
+      ...(req.webSearch
+        ? {
+            tools: [{ type: "web_search" as const }],
+            max_tool_calls: req.webSearch.maxUses,
+            include: ["web_search_call.action.sources" as const],
+          }
+        : {}),
     });
+    for (const item of response.output) {
+      if (item.type === "web_search_call") {
+        u.searches += 1;
+        const action = item.action;
+        if (action?.type === "search") for (const src of action.sources ?? []) seen.add(src.url);
+        if (action?.type === "open_page" && action.url) seen.add(action.url);
+      } else if (item.type === "message") {
+        for (const part of item.content) {
+          if (part.type !== "output_text") continue;
+          for (const a of part.annotations) if (a.type === "url_citation") seen.add(a.url);
+        }
+      }
+    }
     u.input = response.usage?.input_tokens ?? 0;
     u.cached = response.usage?.input_tokens_details?.cached_tokens ?? 0;
     u.cacheWrite = response.usage?.input_tokens_details?.cache_write_tokens ?? 0;
@@ -152,14 +189,15 @@ export class OpenAIExhaustedError extends Error {
 export async function runOpenAI<S extends z.ZodType>(
   req: StructuredRequest<S>,
   models: string[] = openaiModels(),
-): Promise<{ data: z.infer<S>; attempts: ProviderAttempt[] }> {
-  const content = await buildContent(req);
+): Promise<{ data: z.infer<S>; attempts: ProviderAttempt[]; seenUrls: string[] }> {
+  const seen = new Set<string>();
+  const content = await buildContent(req, seen);
   const attempts: ProviderAttempt[] = [];
   for (const model of models) {
     try {
-      const { data, attempt } = await runOneModel(model, req, content);
+      const { data, attempt } = await runOneModel(model, req, content, seen);
       attempts.push(attempt);
-      return { data, attempts };
+      return { data, attempts, seenUrls: [...seen] };
     } catch (err) {
       if (err instanceof ProviderUnavailableError) {
         attempts.push(err.attempt);

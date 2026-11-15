@@ -12,6 +12,8 @@ export type StructuredRequest<S extends z.ZodType> = {
   schemaName: string; // OpenAI requires a name for the JSON schema
   urls?: { label: string; url: string }[]; // web pages the model must read
   pdfs?: { label: string; title: string; base64: string }[];
+  // Let the model search the web (Claude web search / OpenAI web search), at most maxUses times.
+  webSearch?: { maxUses: number };
   effort?: Effort;
   maxTokens?: number;
 };
@@ -24,6 +26,7 @@ export type ProviderAttempt = {
   inputTokens: number;
   outputTokens: number;
   costUsd: number | null; // null when no price is configured
+  searches?: number; // web searches run during this attempt
   error?: string;
 };
 
@@ -32,6 +35,9 @@ export type StructuredResult<T> = {
   provider: AiProvider;
   model: string;
   attempts: ProviderAttempt[];
+  // Every web address the model actually read or got back from a search. Used to drop any
+  // cited link the model did not really see.
+  seenUrls: string[];
 };
 
 export class AiError extends Error {

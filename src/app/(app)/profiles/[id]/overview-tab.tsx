@@ -112,7 +112,7 @@ export function OverviewTab({ profile }: { profile: Profile }) {
       </Card>
 
       <div className="sticky bottom-4 flex justify-end">
-        <SubmitButton className="shadow-lg">Save profile</SubmitButton>
+        <SubmitButton variant="gradient-outline">Save profile</SubmitButton>
       </div>
     </ActionForm>
   );

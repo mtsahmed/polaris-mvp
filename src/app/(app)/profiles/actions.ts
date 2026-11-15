@@ -7,8 +7,7 @@ import { fail, lines, ok, text, type ActionState } from "@/lib/action-state";
 import { anyProviderConfigured } from "@/lib/ai/generate";
 import { draftIcp } from "@/lib/ai/icp-draft";
 import { extractProfileIntelligence, type IntelligenceSource } from "@/lib/ai/profile-intelligence";
-import { AiError, type ProviderAttempt } from "@/lib/ai/types";
-import { logProviderCall } from "@/lib/providers/usage-log";
+import { handleAiError, logAttempts } from "@/lib/ai/log-attempts";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { QUESTIONNAIRE } from "@/lib/questionnaire";
@@ -31,32 +30,7 @@ function profilePath(id: string) {
   return `/profiles/${id}`;
 }
 
-type Db = Awaited<ReturnType<typeof createClient>>;
 
-// Every provider attempt, including a failed Claude call before an OpenAI fallback, is logged.
-async function logAttempts(supabase: Db, orgId: string, task: string, attempts: ProviderAttempt[]) {
-  for (const a of attempts) {
-    await logProviderCall(supabase, {
-      orgId,
-      provider: a.provider,
-      endpoint: `${a.model}:${task}`,
-      inputTokens: a.inputTokens,
-      outputTokens: a.outputTokens,
-      costEstimateUsd: a.costUsd ?? undefined,
-      ok: a.ok,
-      error: a.error,
-    });
-  }
-}
-
-async function handleAiError(supabase: Db, orgId: string, task: string, err: unknown): Promise<string> {
-  if (err instanceof AiError) {
-    await logAttempts(supabase, orgId, task, err.attempts);
-    return err.message;
-  }
-  console.error(`[${task}]`, err);
-  return err instanceof Error ? err.message : "The AI request failed.";
-}
 
 // ---------------------------------------------------------------------------
 // Profiles
@@ -281,7 +255,7 @@ export async function deleteSource(profileId: string, sourceId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Profile intelligence (Claude)
+// Profile insights (the AI summary of a profile from its sources; table column: intelligence)
 // ---------------------------------------------------------------------------
 
 export async function generateIntelligence(
@@ -291,7 +265,7 @@ export async function generateIntelligence(
 ): Promise<ActionState> {
   const session = await requireSession();
   if (!anyProviderConfigured()) {
-    return fail("Set ANTHROPIC_API_KEY (or OPENAI_API_KEY as a fallback) in .env.local to generate profile intelligence.");
+    return fail("Set ANTHROPIC_API_KEY (or OPENAI_API_KEY as a fallback) in .env.local to generate profile insights.");
   }
 
   const supabase = await createClient();

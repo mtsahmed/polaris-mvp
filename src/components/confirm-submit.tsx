@@ -10,16 +10,18 @@ export function ConfirmSubmit({
   label,
   confirmLabel = "Yes, delete",
   size = "sm",
+  title,
 }: {
   action: () => Promise<void>;
   label: ReactNode;
   confirmLabel?: string;
   size?: "sm" | "xs";
+  title?: string; // hover text, for icon-only labels
 }) {
   const [armed, setArmed] = useState(false);
   if (!armed) {
     return (
-      <Button type="button" variant="ghost" size={size} onClick={() => setArmed(true)}>
+      <Button type="button" variant="ghost" size={size} title={title} onClick={() => setArmed(true)}>
         {label}
       </Button>
     );

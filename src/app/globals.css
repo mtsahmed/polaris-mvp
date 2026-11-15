@@ -194,4 +194,18 @@
   .bg-brand-gradient-button {
     background-image: var(--brand-gradient-button);
   }
+  /* Secondary actions: page-coloured fill inside a brand-gradient outline. The two background
+     layers are clipped separately (fill to the padding box, gradient to the border box);
+     !important beats the button's own bg-clip-padding utility. */
+  .gradient-outline {
+    --gradient-fill: var(--card);
+    border-color: transparent !important;
+
+    background-image: linear-gradient(var(--gradient-fill), var(--gradient-fill)), var(--brand-gradient-button);
+    background-origin: border-box;
+    background-clip: padding-box, border-box !important;
+  }
+  .gradient-outline:hover {
+    --gradient-fill: color-mix(in oklch, var(--card), var(--brand) 7%);
+  }
 }

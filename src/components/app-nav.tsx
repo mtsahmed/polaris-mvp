@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Kanban, PenLine, Receipt, UserRound } from "lucide-react";
+import { Compass, Contact, Kanban, PenLine, Receipt, Send, Telescope, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean; when?: string }[] = [
   { href: "/profiles", label: "Profiles", icon: UserRound, ready: true },
+  { href: "/discovery", label: "Discovery", icon: Compass, ready: true },
+  { href: "/intelligence", label: "Intelligence", icon: Telescope, ready: true },
+  { href: "/contacts", label: "Contacts", icon: Contact, ready: true },
+  { href: "/pitch", label: "Pitch studio", icon: PenLine, ready: true },
+  { href: "/outreach", label: "Outreach", icon: Send, ready: true },
+  { href: "/pipeline", label: "Pipeline", icon: Kanban, ready: true },
   { href: "/usage", label: "Usage & cost", icon: Receipt, ready: true },
-  { href: "#", label: "Pitch studio", icon: PenLine, ready: false, when: "Weeks 3–4" },
-  { href: "#", label: "Discovery", icon: Compass, ready: false, when: "Weeks 5–6" },
-  { href: "#", label: "Pipeline", icon: Kanban, ready: false, when: "Weeks 7–8" },
 ];
 
 export function AppNav() {

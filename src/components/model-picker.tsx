@@ -60,7 +60,7 @@ export function ModelPicker({
           </optgroup>
         ))}
       </select>
-      <p className="mt-2 text-sm leading-snug text-sidebar-foreground/80" aria-live="polite">
+      <p className="mt-1.5 text-xs leading-snug text-sidebar-foreground/70" aria-live="polite">
         {pending ? "Saving…" : note}
       </p>
       <noscript>

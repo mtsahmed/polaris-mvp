@@ -28,16 +28,16 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function IntelligenceTab({ profile, sourceCount }: { profile: Profile; sourceCount: number }) {
+export function InsightsTab({ profile, sourceCount }: { profile: Profile; sourceCount: number }) {
   const intel = profile.intelligence;
 
   return (
     <div className="space-y-6">
-      {/* 1. Profile intelligence */}
+      {/* 1. Profile insights */}
       <Card>
         <CardHeader className="sm:flex sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="space-y-3">
-            <CardTitle icon={Sparkles}>Profile intelligence</CardTitle>
+            <CardTitle icon={Sparkles}>Profile insights</CardTitle>
             <CardDescription className="max-w-3xl text-base leading-relaxed">
               The AI reads every source on the Sources tab and drafts the profile. Each statement comes with a
               quote from the source it rests on; anything the sources do not establish is listed as an open
@@ -45,12 +45,12 @@ export function IntelligenceTab({ profile, sourceCount }: { profile: Profile; so
             </CardDescription>
           </div>
           {sourceCount === 0 ? (
-            <Link href={`/profiles/${profile.id}?tab=sources`} className={buttonVariants()}>
+            <Link href={`/profiles/${profile.id}?tab=sources`} className={buttonVariants({ variant: "gradient-outline" })}>
               Add sources first
             </Link>
           ) : (
             <ActionForm action={generateIntelligence.bind(null, profile.id)}>
-              <SubmitButton pendingLabel="Reading sources… (up to a minute)">
+              <SubmitButton variant="gradient-outline" pendingLabel="Reading sources… (up to a minute)">
                 <Sparkles /> {intel ? "Regenerate draft" : "Generate draft"}
               </SubmitButton>
             </ActionForm>
@@ -78,7 +78,7 @@ export function IntelligenceTab({ profile, sourceCount }: { profile: Profile; so
                 </CardDescription>
               </div>
               <form action={applyIntelligence.bind(null, profile.id)}>
-                <SubmitButton pendingLabel="Applying…">Apply to profile</SubmitButton>
+                <SubmitButton variant="gradient-outline" pendingLabel="Applying…">Apply to profile</SubmitButton>
               </form>
             </CardHeader>
             <CardContent className="space-y-6">

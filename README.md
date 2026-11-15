@@ -15,7 +15,10 @@ Takes a business or talent profile from **profile → ICP → cited opportunity 
 | Profile intelligence: Claude reads the sources and drafts the profile with a quote per claim | Built |
 | ICP: Claude draft, manual edits, versions, approval stamped with the approver | Built |
 | Usage & cost log for every provider call | Built |
-| Pitch studio, discovery, contacts, outreach, pipeline | Weeks 3–8 (shown as "planned" in the sidebar, not clickable) |
+| Pitch studio: company URL → cited research (site + web search) → 2–3 editable concepts → email, subject and follow-up, approved by a named user | Built 13 November 2026; needs migration `20261114000000_pitch_studio.sql`. Nothing is sent yet: approved emails are copied out by hand |
+| Discovery, Intelligence briefs | Built 13–14 November 2026 (migrations `20261116000000_discovery.sql`, `20261117000000_intelligence.sql`) |
+| Contacts: found automatically when a company is marked Pursue, or with "Find contacts for all"; Apollo first (needs a paid Apollo plan, `APOLLO_API_KEY`), then public web search (an email or number is kept only if Polaris finds it on its source page); Google Maps and other finds added by hand | Built 15 November 2026; needs migrations `20261118000000_contacts_outreach.sql` and `20261119000000_contact_web_sources.sql` |
+| Outreach and pipeline: send by hand after approval, follow-up reminders, call and WhatsApp links under the agreed rules, stage board | Built 14 November 2026. No Instantly yet |
 
 ## Stack
 
@@ -54,11 +57,13 @@ npm run lint    # ESLint
 - `src/lib/ai/generate.ts` runs every AI job: on Auto, Claude first (`providers/anthropic.ts`), OpenAI only if Claude is unavailable (`providers/openai.ts`). Each job must return JSON matching a schema. Refusals and bad answers are reported, never re-sent to the other vendor. Every attempt is logged. List prices for the cost log are in `claude.ts` (Claude) and `providers/openai.ts` (OpenAI); update them when providers change prices.
 - For OpenAI, which cannot read a URL itself, `fetch-page.ts` downloads source pages on the server and refuses private or internal network addresses.
 - `src/config/brand.ts` is the only place the product name is set (roadmap 3.4).
+- `docs/design-guide.md` sets the interface rules (button levels, text styles, tags, layout); colours and gradients live in `src/app/globals.css`.
 - Uploads go straight from the browser to Supabase Storage under `<org id>/<profile id>/…`; storage rules reject any other path.
 
 ## Rules the code enforces
 
 - No research without a source: profile intelligence must cite a source label and quote for every statement, or list the gap as a question.
 - Approvals are stamped by the database with the acting user (`icps`, `pitches`), and approved ICP versions cannot be edited.
-- A pitch cannot leave draft without an approver; editing an approved pitch sends it back to draft (enforced in the schema, used from week 7).
+- A pitch cannot leave draft without an approver; editing an approved pitch sends it back to draft (enforced in the schema; used by the pitch studio).
+- Research findings are kept only if their link matches a page the AI actually read or a search result it was shown; any other link is dropped as possibly made up.
 - Every Claude call is logged in `provider_calls` with tokens and estimated cost, including failures.

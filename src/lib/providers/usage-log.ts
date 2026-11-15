@@ -5,9 +5,10 @@ export type ProviderCall = {
   orgId: string;
   provider: "anthropic" | "openai" | "apollo" | "instantly";
   endpoint: string;
-  credits?: number;
+  credits?: number; // provider credits, or web searches for AI research calls
   inputTokens?: number;
   outputTokens?: number;
+  searches?: number;
   costEstimateUsd?: number;
   ok: boolean;
   error?: string;
@@ -23,6 +24,7 @@ export async function logProviderCall(supabase: SupabaseClient, call: ProviderCa
     credits: call.credits ?? null,
     input_tokens: call.inputTokens ?? null,
     output_tokens: call.outputTokens ?? null,
+    ...(call.searches ? { searches: call.searches } : {}),
     cost_estimate_usd: call.costEstimateUsd ?? null,
     ok: call.ok,
     error: call.error ?? null,
