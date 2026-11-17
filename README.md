@@ -30,7 +30,7 @@ Next.js 16 (App Router, TypeScript) · Tailwind CSS 4 · shadcn/ui (Base UI) · 
 2. **Create the database.** In the Supabase dashboard open *SQL Editor* and run each file in `supabase/migrations/` in name order:
    - `20261112000000_initial_schema.sql` creates all tables, the security rules and the `profile-uploads` storage bucket.
    - `20261113000000_grants.sql` lets signed-in users use those tables (without it you see "permission denied for table").
-3. **Auth settings.** *Authentication → URL Configuration*: set Site URL to `http://localhost:3000` (and later your Vercel URL), and add `http://localhost:3000/auth/confirm` to Redirect URLs.
+3. **Auth settings.** *Authentication → URL Configuration*: set Site URL to `http://localhost:3000` (the live address once deployed, see *Deploy to Vercel*), and add `http://localhost:3000/auth/confirm` to Redirect URLs.
    Supabase's built-in email sender allows only a few emails an hour; add your own SMTP under *Authentication → Emails* before inviting others.
 4. **Environment.** Copy `.env.example` to `.env.local` and fill in the Supabase URL and anon key (*Project Settings → API*) and your `ANTHROPIC_API_KEY`. Optionally add `OPENAI_API_KEY` as a fallback for when Claude is unavailable; `OPENAI_MODELS` sets the order of OpenAI models tried (default `gpt-6.1-sol,gpt-5.5`).
 5. **Run it.**
@@ -39,6 +39,16 @@ Next.js 16 (App Router, TypeScript) · Tailwind CSS 4 · shadcn/ui (Base UI) · 
    npm run dev
    ```
    Open http://localhost:3000, create an account, confirm the email, name your workspace.
+
+## Deploy to Vercel
+
+Polaris is hosted on Vercel only, at https://polaris.tiffanyaisys.com. Hostinger keeps the DNS and email for `tiffanyaisys.com`. Full plan: `docs/deployment-plan.md`.
+
+1. **Vercel project.** Import the GitHub repository at vercel.com (framework: Next.js, default build settings). Use the Pro plan: Hobby is for non-commercial use only. Set the function region to the one nearest the Supabase project's region. Long AI jobs rely on `export const maxDuration = 300` in the pages that start them.
+2. **Environment variables** (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL=https://polaris.tiffanyaisys.com`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENAI_MODELS`, `APOLLO_API_KEY`. Redeploy after changing any of them.
+3. **Domain.** In Vercel add `polaris.tiffanyaisys.com`; in Hostinger's DNS zone for `tiffanyaisys.com` add the `CNAME polaris` record Vercel shows, and remove any other `polaris` record (such as an `A` record from a Hostinger website). Leave the MX and email records alone.
+4. **Supabase.** *Authentication → URL Configuration*: Site URL `https://polaris.tiffanyaisys.com`; Redirect URLs `https://polaris.tiffanyaisys.com/auth/confirm` plus `http://localhost:3000/auth/confirm` for local work. The email templates use `{{ .SiteURL }}`, so their links follow the Site URL.
+5. **After that** every merge to `main` deploys to production and every branch gets a preview link. Previews use the same Supabase project, so treat their data as real.
 
 ## Everyday commands
 

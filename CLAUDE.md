@@ -4,7 +4,7 @@
 
 # Polaris project notes
 
-The approved plan is imported above from `docs/polaris-mvp-roadmap.md`. Edit the plan there, never here, so there is one copy. Ideas saved for later builds: `docs/future-build-plans.md`. Setup and architecture: `README.md`.
+The approved plan is imported above from `docs/polaris-mvp-roadmap.md`. Edit the plan there, never here, so there is one copy. Ideas saved for later builds: `docs/future-build-plans.md`. Deployment (Vercel only, with streaming of AI responses before go-live): `docs/deployment-plan.md`. Setup and architecture: `README.md`.
 
 ## Current status
 
