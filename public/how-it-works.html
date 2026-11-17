@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polaris route map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout idea: a night-sky constellation you walk star by star; one detail panel below the map. Single theme by choice. */
+  --night:#17122B; --night-2:#221A3D; --night-3:#2D2350;
+  --ink:#F6F1E7; --muted:#BDB4D0;
+  --gold:#F0CF86; --magenta:#F2589F; --sky:#A9D6F5;
+  --good:#8FDDB0; --warn:#F5B971; --bad:#F29A9A;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+canvas#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+main{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:14px 20px 56px;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3,p,ul,ol{margin:0}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(24px,3vw,34px);line-height:1.1;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(20px,2.4vw,24px);line-height:1.15;text-wrap:balance}
+h3{font-family:var(--display);font-weight:500;font-size:17px;line-height:1.2}
+.intro{display:flex;flex-direction:column;gap:6px}
+.intro p{color:var(--muted);font-size:16px;max-width:62ch}
+.lead{display:flex;justify-content:space-between;align-items:center;gap:16px 32px;flex-wrap:wrap}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.progress{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:15px}
+.bar{flex:1;min-width:160px;max-width:320px;height:8px;border-radius:8px;background:var(--night-3);overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--magenta));transition:width .4s}
+
+/* map */
+.mapwrap{overflow-x:auto;border:1px solid var(--night-3);border-radius:20px;background:rgba(34,26,61,.72)}
+.map{position:relative;min-width:900px;height:clamp(150px,23vh,260px)}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map path{fill:none;stroke:var(--sky);stroke-opacity:.45;stroke-width:2;stroke-dasharray:3 7;stroke-linecap:round}
+.stop{position:absolute;transform:translate(-50%,-18px);display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer;width:118px}
+.dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:16px;background:var(--night-3);border:2px solid var(--sky);color:var(--sky);transition:transform .2s,box-shadow .2s,background .2s}
+.stop:hover .dot{transform:scale(1.1)}
+.stop.seen .dot{background:var(--gold);border-color:var(--gold);color:var(--night);box-shadow:0 0 18px rgba(240,207,134,.55)}
+.stop.current .dot{border-color:var(--magenta);box-shadow:0 0 0 5px rgba(242,88,159,.3),0 0 22px rgba(242,88,159,.6);transform:scale(1.15)}
+.stop.final .dot{border-radius:0;clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);width:48px;height:48px;margin:-6px 0;font-size:0}
+.stop .name{font-size:13px;font-weight:600;line-height:1.2;text-align:center}
+.stop.current .name{color:var(--gold)}
+.stop:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:8px}
+
+/* panel */
+.panel{background:var(--night-2);border:1px solid var(--night-3);border-radius:20px;padding:16px 22px;display:flex;flex-direction:column;gap:12px}
+.phead{display:flex;flex-direction:column;gap:2px}
+.phead p{color:var(--muted)}
+.cols{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:16px}
+.block{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.block h3{color:var(--sky)}
+.block ul{padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.gate{border-left:4px solid var(--gold);padding:8px 12px;background:rgba(240,207,134,.09);border-radius:0 10px 10px 0}
+.gate b{color:var(--gold)}
+.hl{color:var(--gold);font-weight:700}
+.hl-green{color:var(--good);font-style:italic}
+.extra{background:var(--night);border:1px solid var(--night-3);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.extra h3{color:var(--magenta)}
+.tag{align-self:flex-start;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:99px;border:1px solid var(--muted);color:var(--muted)}
+.nav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:700;padding:8px 16px;border-radius:99px;border:2px solid var(--sky);background:transparent;color:var(--sky);cursor:pointer}
+.btn.primary{background:var(--magenta);border-color:var(--magenta);color:var(--night)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.small{padding:6px 14px;font-size:15px}
+.btn.on{background:var(--sky);color:var(--night)}
+
+/* widgets */
+.crit{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;font-size:15px}
+select{font:inherit;font-size:15px;background:var(--night-2);color:var(--ink);border:1px solid var(--muted);border-radius:8px;padding:4px 8px}
+.score{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.score .num{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.pill{font-size:13px;font-weight:700;padding:3px 12px;border-radius:99px;color:var(--night)}
+.pill.strong{background:var(--good)} .pill.possible{background:var(--warn)} .pill.weak,.pill.no{background:var(--bad)} .pill.thin{background:var(--muted)}
+.small{font-size:15px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label.check{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.lock{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:10px;background:var(--night-2);font-size:15px}
+.lock span:last-child{font-weight:700}
+.lock.open span:last-child{color:var(--good)} .lock.shut span:last-child{color:var(--muted)}
+ol.src{padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+
+/* differences and glance */
+.five,ol.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 40px;font-size:13px;line-height:1.5;color:var(--muted)}
+.five div{display:block}
+.five h3{display:inline;font-family:var(--body);font-weight:700;font-size:inherit;line-height:inherit;color:var(--ink)}
+.five p{display:inline;color:inherit;font-size:inherit}
+ol.glance{padding-left:24px}
+ol.glance b{color:var(--ink)}
+.shrink h2{font-size:clamp(17px,2.4vw,22px)}
+section{display:flex;flex-direction:column;gap:12px;margin:21px 0 5px}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<main>
+  <header class="intro">
+    <span class="eyebrow">How Polaris works</span>
+    <h1>Follow the stars from sign-up to a booked meeting</h1>
+    <div class="lead">
+    <p>Each star is one step. Pick a star to see what you do there, what Polaris does for you, and what opens the next step.</p>
+    <div class="progress"><span id="count">1 of 9 stars visited</span><div class="bar"><span id="fill"></span></div></div>
+    </div>
+  </header>
+
+  <div class="mapwrap">
+    <nav class="map" id="map" aria-label="Steps">
+      <svg viewBox="0 0 900 300" preserveAspectRatio="none" aria-hidden="true"><path id="route" d=""/></svg>
+    </nav>
+  </div>
+
+  <article class="panel" id="panel" aria-live="polite">
+    <div class="phead">
+      <span class="eyebrow" id="p-eyebrow"></span>
+      <h2 id="p-title"></h2>
+      <p id="p-tag"></p>
+    </div>
+    <div class="cols">
+      <div class="block"><h3>What you do</h3><ul id="p-you"></ul></div>
+      <div class="block"><h3>What Polaris does</h3><ul id="p-pol"></ul><p class="gate"><b>Next step opens when:</b> <span id="p-gate"></span></p></div>
+      <div class="extra" id="p-extra"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prev" type="button">Previous step</button>
+      <button class="btn primary" id="next" type="button">Next step</button>
+    </div>
+  </article>
+
+  <section class="shrink">
+    <h2>What makes Polaris different</h2>
+    <div class="five">
+      <div><h3>A source behind every claim.</h3> <p>Each rating shows its reason and the page it came from.</p></div>
+      <div><h3>Unknown is not a low score.</h3> <p>Missing evidence is shown as Unknown and left out of the score.</p></div>
+      <div><h3>Polaris recommends, you decide.</h3> <p>Pursue, hold or skip is your call, and you can override the recommendation.</p></div>
+      <div><h3>Research before contact spend.</h3> <p>Contact credits are used only on companies you chose to pursue.</p></div>
+      <div><h3>Nothing is sent without approval.</h3> <p>A named person approves every message before it goes out.</p></div>
+    </div>
+  </section>
+
+  <section class="shrink">
+    <h2>The whole route at a glance</h2>
+    <ol class="glance" id="glance"></ol>
+  </section>
+</main>
+
+<script>
+var STOPS=[
+ {k:"Start",name:"Sign up",tag:"Create your account and your workspace.",
+  you:["Create your account","Confirm your email","Name your workspace"],
+  pol:["Keeps each workspace's data separate from every other workspace"],
+  gate:"You are signed in and your workspace has a name.",
+  diff:["Your data stays yours","Every record belongs to one workspace, and only its members can read it."]},
+ {k:"Step 1",name:"Profile",tag:"Tell Polaris about your business.",
+  you:["Describe your business or the talent you represent","Add sources: links, PDF or text files, or a short questionnaire","Add writing samples so pitches sound like you"],
+  pol:["Reads your sources and drafts the profile","Backs each statement with a quote from your sources","Lists what it could not find as questions for you"],
+  gate:"The required profile fields are filled.",
+  diff:["No guessing","If your sources do not say it, Polaris asks you. It does not make it up."]},
+ {k:"Step 2",name:"Ideal customer",tag:"Agree who you are looking for.",
+  you:["Read the draft of your ideal customer","Edit industries, company traits, places and job titles","Set who is not a fit, such as competitors or excluded countries","Approve it"],
+  pol:["Drafts the ideal customer from your profile","Keeps every version","Records who approved it and locks the approved version"],
+  gate:"An approved ideal customer exists.",
+  diff:["You set the target","Nothing is searched until you approve who Polaris should look for."]},
+ {k:"Step 3",name:"Discover",tag:"Find companies worth a closer look.",
+  you:["Run a search, with an optional focus","Review the suggested companies","Shortlist the relevant ones and dismiss the rest"],
+  pol:["Searches the web for companies that match your ideal customer","Shows a finding only when it has read the page behind it","Starts researching a company the moment you shortlist it"],
+  gate:"At least one company is shortlisted.",
+  diff:["Links that were really read","A finding is kept only if its link matches a page Polaris opened. Anything else is dropped."]},
+ {k:"Step 4",name:"Intelligence",tag:"See who is worth pursuing, and why.",
+  you:["Open each company's brief","Check the reasons and sources behind the fit score","Decide: pursue, hold or skip"],
+  pol:["Researches each shortlisted company in the background","Writes a brief: summary, fit score, why now, risks, who to approach and pitch ideas","Suggests the kind of deal: customer, partner, referral or co-marketing","Recommends pursue, hold or skip by fixed rules"],
+  gate:"At least one company is marked pursue.",widget:"fit"},
+ {k:"Step 5",name:"Contacts",tag:"Find the right people.",
+  you:["Review the contacts Polaris found","Search again when you want a fresh look","Add people you found yourself, with where you found them"],
+  pol:["Starts looking when you mark a company pursue","Marks an email Not confirmed unless it appears on its source page","Saves a source link with every contact"],
+  gate:"At least one contact has an email.",widget:"contacts"},
+ {k:"Step 6",name:"Pitch",tag:"Shape the message.",
+  you:["Pick one of the hyper-personalized pitch concepts","Edit the subject, the first email and the follow-up","Approve the pitch"],
+  pol:["Turns the research into concepts tied to the evidence","Drafts the emails in your writing style, using your writing samples","Returns an approved pitch to draft if you edit it"],
+  gate:"At least one pitch is approved.",
+  diff:["Your writing style, your approval","A pitch cannot leave draft until a named person approves it."]},
+ {k:"Step 7",name:"Outreach",tag:"Send it and keep track.",
+  you:["Open the approved email in your mail app, or copy it","Connect Instantly to automate outbound emails (coming soon)","Mark it as sent","Log replies, calls, messages, meetings and bounces"],
+  pol:["Freezes the text once it is marked as sent","Reminds you to follow up 4 business days later","Unlocks call and WhatsApp links only when the rules allow"],
+  gate:"This is the last step. From here, view the pipeline.",widget:"outreach"},
+ {k:"Finish",name:"Pipeline",tag:"See every deal at a glance.",
+  you:["Check the board for what is due next","Move a prospect to Won or Lost when the deal ends"],
+  pol:["Shows each prospect's stage: New lead, Researching, Ready to pitch, Contacted, Replied, Meeting booked","Shows the next task due for each prospect"],
+  gate:"A meeting is booked, and the deal is won or lost.",
+  diff:["One view of the whole route","Every company you pursue stays visible from first research to final outcome."]}
+];
+var POS=[[60,215],[155,140],[250,200],[345,105],[440,175],[535,95],[630,165],[725,90],[830,45]];
+var cur=0,seen={0:true};
+function $(id){return document.getElementById(id)}
+function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+
+/* map */
+var map=$("map");
+$("route").setAttribute("d","M"+POS.map(function(p){return p[0]+" "+p[1]}).join(" L"));
+STOPS.forEach(function(s,i){
+  var b=el("button","stop"+(i===STOPS.length-1?" final":""));b.type="button";
+  b.style.left=(POS[i][0]/900*100)+"%";b.style.top=(POS[i][1]/300*100)+"%";
+  b.appendChild(el("span","dot",i===0?"Go":(i<8?String(i):"")));
+  b.appendChild(el("span","name",s.name));
+  b.setAttribute("aria-label",s.k+": "+s.name);
+  b.addEventListener("click",function(){go(i)});
+  map.appendChild(b);
+  var li=el("li");li.appendChild(el("b",null,s.name+". "));li.appendChild(document.createTextNode(s.tag+" Next step opens when: "+s.gate.charAt(0).toLowerCase()+s.gate.slice(1)));$("glance").appendChild(li);
+});
+
+var MARKS=[["Not confirmed","hl"],["hyper-personalized","hl-green"]];
+function list(id,items){var u=$(id);u.textContent="";items.forEach(function(t){var li=el("li"),m=null,i=-1;MARKS.forEach(function(p){var j=t.indexOf(p[0]);if(j>=0&&!m){m=p;i=j}});if(!m)li.textContent=t;else{li.appendChild(document.createTextNode(t.slice(0,i)));li.appendChild(el("span",m[1],m[0]));li.appendChild(document.createTextNode(t.slice(i+m[0].length)))}u.appendChild(li)})}
+function go(i){
+  cur=i;seen[i]=true;var s=STOPS[i];
+  $("p-eyebrow").textContent=s.k;$("p-title").textContent=s.name;$("p-tag").textContent=s.tag;
+  list("p-you",s.you);list("p-pol",s.pol);$("p-gate").textContent=s.gate;
+  var x=$("p-extra");x.textContent="";
+  if(s.widget==="fit")fitWidget(x);else if(s.widget==="contacts")contactsWidget(x);else if(s.widget==="outreach")outreachWidget(x);
+  else{x.appendChild(el("span","tag","Why this is different"));x.appendChild(el("h3",null,s.diff[0]));x.appendChild(el("p",null,s.diff[1]))}
+  var stops=map.querySelectorAll(".stop");
+  stops.forEach(function(b,j){b.classList.toggle("current",j===i);b.classList.toggle("seen",!!seen[j]);if(j===i)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current")});
+  var n=Object.keys(seen).length;$("count").textContent=n+" of "+STOPS.length+" stars visited"+(n===STOPS.length?". You know the whole route.":"");
+  $("fill").style.width=(n/STOPS.length*100)+"%";
+  $("prev").disabled=i===0;$("next").disabled=i===STOPS.length-1;
+}
+$("prev").addEventListener("click",function(){if(cur>0)go(cur-1)});
+$("next").addEventListener("click",function(){if(cur<STOPS.length-1)go(cur+1)});
+
+/* Step 4: fit score */
+var CRIT=["Has the problem you solve","Industry in your ideal customer","Size and budget signals","Geography and practicality","A buyer role exists"];
+var vals=[15,20,-1,15,10],knock=false,choice=null;
+function fitWidget(x){
+  x.appendChild(el("span","tag","Try it: example company, not real data"));
+  x.appendChild(el("h3",null,"How the fit score works"));
+  var g=el("div","crit");
+  CRIT.forEach(function(c,i){
+    var l=el("label",null,c);l.htmlFor="crit"+i;var s=el("select");s.id="crit"+i;
+    [["Unknown",-1],["None",0],["Weak",5],["Some",10],["Strong",15],["Exact",20]].forEach(function(o){var op=el("option",null,o[0]);op.value=o[1];if(o[1]===vals[i])op.selected=true;s.appendChild(op)});
+    s.addEventListener("change",function(){vals[i]=+s.value;choice=null;draw()});g.appendChild(l);g.appendChild(s);
+  });
+  x.appendChild(g);
+  var kl=el("label","check");var kc=el("input");kc.type="checkbox";kc.id="knock";kc.checked=knock;kl.appendChild(kc);kl.appendChild(document.createTextNode("A sourced finding shows this company is a competitor"));
+  kc.addEventListener("change",function(){knock=kc.checked;choice=null;draw()});x.appendChild(kl);
+  var out=el("div","block");x.appendChild(out);
+  function draw(){
+    out.textContent="";
+    var known=vals.filter(function(v){return v>=0}),n=known.length,rec,band,cls,score=null;
+    if(knock){band="Not a fit";cls="no";rec="skip"}
+    else if(n<3){band="Insufficient evidence";cls="thin";rec="hold"}
+    else{score=Math.round(known.reduce(function(a,b){return a+b},0)/(n*20)*100);
+      if(score>=70&&n>3){band="Strong fit";cls="strong";rec="pursue"}
+      else if(score>=40){band="Possible fit";cls="possible";rec="hold"}
+      else{band="Weak fit";cls="weak";rec="skip"}}
+    var sc=el("div","score");sc.appendChild(el("span","num",score==null?"n/a":String(score)));sc.appendChild(el("span","pill "+cls,band));out.appendChild(sc);
+    var why=knock?"A knockout overrides the score, so no contact search is spent on it.":
+      n<3?"Fewer than 3 criteria are known, so Polaris gives no score.":
+      "Based on "+n+" of 5 criteria. Unknown ones are left out, not counted as zero."+(n===3&&score>=70?" With only 3 known, the band stops at Possible.":"");
+    out.appendChild(el("p","small",why));
+    out.appendChild(el("p",null,"Polaris recommends: "+rec+". Your call:"));
+    var r=el("div","row");
+    ["pursue","hold","skip"].forEach(function(c){var b=el("button","btn small"+(choice===c?" on":""),c.charAt(0).toUpperCase()+c.slice(1));b.type="button";b.addEventListener("click",function(){choice=c;draw()});r.appendChild(b)});
+    out.appendChild(r);
+    if(choice){
+      var m=choice==="pursue"?"Polaris starts finding contacts, and the company appears in Contacts.":"The company stays in Intelligence under "+(choice==="hold"?"Hold":"Skip")+". You can change this later.";
+      if(choice!==rec)m+=" This differs from the recommendation, so Polaris offers a box for your reason and records who decided.";
+      out.appendChild(el("p","small",m));
+    }
+  }
+  draw();
+}
+
+/* Step 5: contact sources */
+function contactsWidget(x){
+  x.appendChild(el("span","tag","Why this is different"));
+  x.appendChild(el("h3",null,"Where contacts come from, in order"));
+  var o=el("ol","src");
+  ["Apollo, a business contact database","The company's own website: contact pages, emails and office lines","Public web search, with every detail checked against its source page","People you add by hand, labelled with where you found them"].forEach(function(t){o.appendChild(el("li",null,t))});
+  x.appendChild(o);
+  x.appendChild(el("p","small","Later sources only fill gaps. An email Polaris cannot find on its source page is shown as Not confirmed, listed last, and never used as the default recipient."));
+  x.appendChild(el("p","small","Contact credits are used only on companies you chose to pursue."));
+}
+
+/* Step 7: follow-up rules */
+var sent=false,replied=false;
+function outreachWidget(x){
+  x.appendChild(el("span","tag","Try it"));
+  x.appendChild(el("h3",null,"What each follow-up needs first"));
+  function chk(id,text,get,set){var l=el("label","check");var c=el("input");c.type="checkbox";c.id=id;c.checked=get();l.appendChild(c);l.appendChild(document.createTextNode(text));c.addEventListener("change",function(){set(c.checked);draw()});x.appendChild(l);return c}
+  var c2;
+  chk("o-sent","The first email is marked as sent",function(){return sent},function(v){sent=v;if(!v){replied=false;c2.checked=false}});
+  c2=chk("o-rep","The prospect has replied",function(){return replied},function(v){replied=v;if(v){sent=true;document.getElementById("o-sent").checked=true}});
+  var out=el("div","block");x.appendChild(out);
+  function lock(name,open,need){var d=el("div","lock "+(open?"open":"shut"));d.appendChild(el("span",null,name));d.appendChild(el("span",null,open?"Available":need));out.appendChild(d)}
+  function draw(){out.textContent="";
+    lock("First email",true,"");
+    lock("Follow-up reminder, 4 business days later",sent,"After the email is sent");
+    lock("Phone call link",sent,"After the email is sent");
+    lock("WhatsApp or text message",replied,"After a reply");
+    out.appendChild(el("p","small","You send every message yourself after approving it. Polaris never sends on its own."));}
+  draw();
+}
+
+/* decorative sky */
+(function(){var c=$("sky"),x=c.getContext("2d");function paint(){var w=c.width=innerWidth,h=c.height=innerHeight;var seed=7;function r(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  for(var i=0;i<140;i++){x.globalAlpha=.15+r()*.5;x.fillStyle=r()>.85?"#F0CF86":"#A9D6F5";var s=r()*1.6+.4;x.beginPath();x.arc(r()*w,r()*h,s,0,6.3);x.fill()}}
+  paint();addEventListener("resize",paint)})();
+
+go(0);
+</script>
+</body>
+</html>

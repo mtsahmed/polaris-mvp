@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Contact, Kanban, PenLine, Receipt, Send, Telescope, UserRound } from "lucide-react";
+import { Compass, Contact, Kanban, PenLine, Receipt, Route, Send, Telescope, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean; when?: string }[] = [
@@ -14,6 +14,7 @@ const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean
   { href: "/outreach", label: "Outreach", icon: Send, ready: true },
   { href: "/pipeline", label: "Pipeline", icon: Kanban, ready: true },
   { href: "/usage", label: "Usage & cost", icon: Receipt, ready: true },
+  { href: "/how-it-works", label: "How it works", icon: Route, ready: true },
 ];
 
 export function AppNav() {

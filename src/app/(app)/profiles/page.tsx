@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { HowItWorksEmbed } from "@/components/how-it-works-embed";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -42,15 +43,25 @@ export default async function ProfilesPage() {
       />
 
       {profiles.length === 0 ? (
-        <div className="rounded-3xl border border-dashed bg-card px-8 py-16 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">No profiles yet</h2>
-          <p className="mx-auto mt-3 max-w-md text-lg leading-relaxed text-muted-foreground">
-            Start with one media or creative business. Add its website, a few documents, and Polaris
-            drafts the profile with sources for every claim.
-          </p>
-          <Link href="/profiles/new" className={buttonVariants({ variant: "brand", size: "lg", className: "mt-8" })}>
-            <Plus /> Create the first profile
-          </Link>
+        // Welcome for a workspace with no profile yet: the first step, then the whole route.
+        <div className="space-y-12">
+          <div className="rounded-3xl border border-dashed bg-card px-8 py-16 text-center">
+            <div className="kicker">Welcome</div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Start with your first profile</h2>
+            <p className="mx-auto mt-3 max-w-md text-lg leading-relaxed text-muted-foreground">
+              Describe one media or creative business. Add its website, a few documents, and Polaris
+              drafts the profile with sources for every claim.
+            </p>
+            <Link href="/profiles/new" className={buttonVariants({ variant: "brand", size: "lg", className: "mt-8" })}>
+              <Plus /> Create the first profile
+            </Link>
+          </div>
+          <section aria-label="How Polaris works">
+            <HowItWorksEmbed />
+            <p className="mt-3 text-[13px] italic text-muted-foreground/75">
+              This route map stays in the sidebar under How it works.
+            </p>
+          </section>
         </div>
       ) : (
         <ul className="grid gap-4">

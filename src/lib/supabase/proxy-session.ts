@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// The dark route map (public/how-it-works.html) is a public showpiece; the light one is for signed-in pages.
+const PUBLIC_PATHS = ["/login", "/auth", "/how-it-works.html"];
 
 // Refreshes the Supabase session on every request and keeps signed-out users on public pages.
 export async function updateSession(request: NextRequest) {

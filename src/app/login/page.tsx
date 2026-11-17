@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Route } from "lucide-react";
 import { BrandMark, StarIcon } from "@/components/brand-mark";
+import { buttonVariants } from "@/components/ui/button";
 import { brand } from "@/config/brand";
 import { LoginForm } from "./login-form";
 
@@ -30,7 +32,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
         <BrandMark className="relative" />
 
         <div className="relative max-w-xl space-y-8">
-          <div className="kicker text-gold">Partnership intelligence</div>
+          <div className="kicker mt-2.5 text-gold">Partnership intelligence</div>
           <h1 className="text-5xl font-semibold leading-[1.08] tracking-tight text-white">
             Find the partners worth pitching, and say{" "}
             <span className="text-gradient">something worth reading.</span>
@@ -52,9 +54,20 @@ export default async function LoginPage(props: PageProps<"/login">) {
               </li>
             ))}
           </ol>
+          <a
+            href="/how-it-works.html"
+            className={buttonVariants({
+              variant: "gradient-outline",
+              size: "lg",
+              // The gradient outline fills with the card colour by default; on this dark panel use the panel colour.
+              className: "text-white [--gradient-fill:var(--sidebar)] hover:[--gradient-fill:var(--sidebar-accent)]",
+            })}
+          >
+            <Route /> See how {brand.productName} works
+          </a>
         </div>
 
-        <p className="relative text-[0.9375rem] text-sidebar-foreground/80">{brand.tagline}</p>
+        <p className="relative mt-10 text-[0.9375rem] text-sidebar-foreground/80">{brand.tagline}</p>
       </section>
 
       <section className="flex items-center justify-center px-4 py-16 sm:px-8">
