@@ -96,6 +96,48 @@ export async function resendConfirmation(prev: SignUpState, formData: FormData):
   return { sentTo: email.data, resent: true };
 }
 
+// Forgot password: emails a reset link. The answer is the same whether or not an account exists,
+// so the form cannot be used to find out who has a Polaris account.
+export type ResetRequestState = { error?: string; sentTo?: string };
+
+export async function requestPasswordReset(_prev: ResetRequestState, formData: FormData): Promise<ResetRequestState> {
+  const email = z.email("Enter a valid email address.").safeParse(formData.get("email"));
+  if (!email.success) return { error: email.error.issues[0].message };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email.data, {
+    redirectTo: `${serverEnv.siteUrl()}/auth/confirm?next=/reset-password`,
+  });
+  // Rate limits and outages are worth showing; Supabase never reports "no such user" here.
+  if (error) return { error: error.message };
+  return { sentTo: email.data };
+}
+
+const newPassword = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: "The two passwords do not match.", path: ["confirm"] });
+
+// Choose a new password: runs while the reset link's session is active.
+export async function updatePassword(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const parsed = newPassword.safeParse({ password: formData.get("password"), confirm: formData.get("confirm") });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims?.sub) {
+    return { error: "Your reset link has expired. Ask for a new one from the sign-in page." };
+  }
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    if (error.code === "same_password") return { error: "Choose a password different from your current one." };
+    return { error: error.message };
+  }
+  redirect("/profiles");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
