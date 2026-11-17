@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Globe, Search } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, NativeSelect } from "@/components/field";
+import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -115,9 +116,12 @@ export default async function PitchStudioPage(props: PageProps<"/pitch">) {
                 >
                   <Textarea id="notes" name="notes" rows={3} />
                 </Field>
-                <SubmitButton variant="gradient-outline" pendingLabel="Researching… this takes a minute or two">
+                <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
                   <Search /> Research company
                 </SubmitButton>
+                <PolarisWorkingWhilePending>
+                  Polaris is reading the site and searching for evidence. This takes a minute or two.
+                </PolarisWorkingWhilePending>
               </ActionForm>
             )}
           </CardContent>

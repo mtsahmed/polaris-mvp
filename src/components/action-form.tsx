@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SpinningStar } from "@/components/polaris-working";
 import type { ActionState } from "@/lib/action-state";
 
 type Variant = "default" | "gradient-outline" | "outline" | "secondary" | "ghost" | "destructive";
@@ -18,9 +19,11 @@ export function SubmitButton({
   disabled,
   size,
   title,
+  working = false,
 }: {
   children: ReactNode;
   pendingLabel?: string;
+  // An AI or background step: while pending, the rotating Polaris star shows before the label.
   variant?: Variant;
   className?: string;
   // For forms with several submit buttons (the clicked one's name and value are submitted).
@@ -29,6 +32,7 @@ export function SubmitButton({
   disabled?: boolean;
   size?: "default" | "sm";
   title?: string;
+  working?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
@@ -42,7 +46,17 @@ export function SubmitButton({
       name={name}
       value={value}
     >
-      {pending ? (pendingLabel ?? "Saving…") : children}
+      {pending ? (
+        working ? (
+          <>
+            <SpinningStar /> {pendingLabel ?? "Working…"}
+          </>
+        ) : (
+          (pendingLabel ?? "Saving…")
+        )
+      ) : (
+        children
+      )}
     </Button>
   );
 }

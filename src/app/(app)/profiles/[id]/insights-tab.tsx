@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { FilePenLine, MessageCircleQuestion, Quote, Sparkles } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
@@ -50,9 +51,12 @@ export function InsightsTab({ profile, sourceCount }: { profile: Profile; source
             </Link>
           ) : (
             <ActionForm action={generateIntelligence.bind(null, profile.id)}>
-              <SubmitButton variant="gradient-outline" pendingLabel="Reading sources… (up to a minute)">
+              <SubmitButton variant="gradient-outline" working pendingLabel="Reading sources…">
                 <Sparkles /> {intel ? "Regenerate draft" : "Generate draft"}
               </SubmitButton>
+              <PolarisWorkingWhilePending className="mt-3 max-w-xs">
+                Polaris is reading your sources and drafting the profile. Up to a minute.
+              </PolarisWorkingWhilePending>
             </ActionForm>
           )}
         </CardHeader>

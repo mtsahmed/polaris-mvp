@@ -5,6 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, NativeSelect } from "@/components/field";
 import { NextAction } from "@/components/next-action";
 import { PageHeader } from "@/components/page-header";
+import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { FollowProfile } from "@/components/profile-switcher";
 import { RichText } from "@/components/rich-text";
 import { SourceChip } from "@/components/source-chip";
@@ -161,9 +162,12 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
                   ))}
                 </NativeSelect>
               </Field>
-              <SubmitButton variant="gradient-outline" pendingLabel="Searching… this takes a few minutes">
+              <SubmitButton variant="gradient-outline" working pendingLabel="Finding companies…">
                 <Compass /> Find companies
               </SubmitButton>
+              <PolarisWorkingWhilePending>
+                Polaris is searching the web for companies that fit. This takes two to four minutes; keep this page open.
+              </PolarisWorkingWhilePending>
             </ActionForm>
           </CardContent>
         </Card>
@@ -384,7 +388,7 @@ function Suggestion({ row, signals, bare = false }: { row: Row; signals: Signal[
         {row.status === "suggested" ? (
           <>
             <ActionForm action={shortlistSuggestion.bind(null, row.id)}>
-              <SubmitButton variant="gradient-outline" pendingLabel="Shortlisting…">
+              <SubmitButton variant="gradient-outline" working pendingLabel="Shortlisting…">
                 <Plus /> Shortlist
               </SubmitButton>
             </ActionForm>

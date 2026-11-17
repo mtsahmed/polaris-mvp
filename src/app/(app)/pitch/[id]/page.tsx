@@ -133,7 +133,7 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
               </p>
             </div>
             <ActionForm action={refreshResearch.bind(null, prospect.id)} className="mt-4 shrink-0 sm:mt-0">
-              <SubmitButton variant="gradient-outline" pendingLabel="Researching…">
+              <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
                 <RefreshCw /> {prospect.researched_at ? "Refresh research" : "Research company"}
               </SubmitButton>
             </ActionForm>
@@ -245,6 +245,7 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
             <ActionForm action={createConcepts.bind(null, prospect.id)}>
               <SubmitButton
                 variant="gradient-outline"
+                working
                 pendingLabel="Drafting concepts…"
               >
                 <Sparkles /> {concepts?.length ? "Redraft concepts" : "Draft concepts"}
@@ -381,7 +382,7 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
             </div>
             {selected && (
               <ActionForm action={createPitch.bind(null, prospect.id)}>
-                <SubmitButton variant="gradient-outline" pendingLabel="Writing…">
+                <SubmitButton variant="gradient-outline" working pendingLabel="Writing the email…">
                   <Sparkles /> {email ? "Rewrite both" : "Write email"}
                 </SubmitButton>
               </ActionForm>

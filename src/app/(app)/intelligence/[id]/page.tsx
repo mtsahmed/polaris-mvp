@@ -6,6 +6,7 @@ import { AlertTriangle, Check, Clock, Lightbulb, RefreshCw, Users } from "lucide
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { NextAction } from "@/components/next-action";
+import { PolarisWorking } from "@/components/polaris-working";
 import { PageHeader } from "@/components/page-header";
 import { FollowProfile } from "@/components/profile-switcher";
 import { ProspectStageBar } from "@/components/prospect-stage-bar";
@@ -103,7 +104,7 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
           <>
             {status !== "researching" && (
               <ActionForm action={researchProspect.bind(null, prospect.id)}>
-                <SubmitButton variant="gradient-outline" pendingLabel="Starting…">
+                <SubmitButton variant="gradient-outline" working pendingLabel="Starting research…">
                   <RefreshCw /> {!brief ? "Research company" : status === "failed" ? "Retry research" : "Refresh research"}
                 </SubmitButton>
               </ActionForm>
@@ -122,10 +123,10 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
 
       {/* Research status */}
       {status === "researching" && (
-        <Notice icon={<Clock className="size-4 text-brand" />}>
+        <PolarisWorking panel className="mb-6">
           Researching since {dateTimeFmt.format(new Date(brief!.created_at))}. This usually takes two to four minutes; the
           page updates by itself.
-        </Notice>
+        </PolarisWorking>
       )}
       {status === "failed" && (
         <Notice tone="error" icon={<AlertTriangle className="size-4" />}>
@@ -417,6 +418,7 @@ function FitScore({
                 size="sm"
                 variant={t === goal ? "gradient-outline" : "ghost"}
                 className={cn(t === goal && "ring-3 ring-brand/30")}
+                working
                 pendingLabel="Scoring…"
                 disabled={running}
               >
@@ -442,7 +444,7 @@ function FitScore({
           </p>
           {!running && (
             <ActionForm action={rescoreProspect.bind(null, prospectId)} className="shrink-0">
-              <SubmitButton variant="gradient-outline" size="sm" pendingLabel="Starting…">
+              <SubmitButton variant="gradient-outline" size="sm" working pendingLabel="Re-scoring…">
                 <RefreshCw /> Re-score
               </SubmitButton>
             </ActionForm>
@@ -482,7 +484,7 @@ function FitScore({
         </span>
         {goal && !running && (
           <ActionForm action={rescoreProspect.bind(null, prospectId)} className="ml-auto">
-            <SubmitButton variant="ghost" size="sm" pendingLabel="Starting…" title="Re-score from the saved findings, with no new web research">
+            <SubmitButton variant="ghost" size="sm" working pendingLabel="Re-scoring…" title="Re-score from the saved findings, with no new web research">
               <RefreshCw /> Re-score
             </SubmitButton>
           </ActionForm>

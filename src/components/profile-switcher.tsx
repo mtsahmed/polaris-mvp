@@ -16,10 +16,10 @@ export function ProfileSwitcher({
 }) {
   const [pending, startTransition] = useTransition();
   return (
-    <form action={setProfile} className="relative rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-4 py-3">
+    <form action={setProfile} className="relative rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-4 py-2.5">
       <label
         htmlFor="profile-switcher"
-        className="flex items-center gap-1.5 font-mono text-xs font-medium uppercase tracking-[0.14em] text-gold"
+        className="flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-gold"
       >
         <UserRound className="size-3.5" aria-hidden="true" /> Profile
       </label>
@@ -34,7 +34,7 @@ export function ProfileSwitcher({
           const formData = new FormData(e.currentTarget.form!);
           startTransition(() => setProfile(formData));
         }}
-        className="mt-2 h-10 w-full rounded-xl border border-sidebar-border bg-sidebar px-3 text-[0.9375rem] font-medium text-sidebar-foreground [color-scheme:dark] outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 disabled:opacity-70"
+        className="mt-1.5 h-8 w-full rounded-xl border border-sidebar-border bg-sidebar px-2.5 text-[12px] font-medium text-sidebar-foreground [color-scheme:dark] outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 disabled:opacity-70"
       >
         {profiles.map((p) => (
           <option key={p.id} value={p.id}>

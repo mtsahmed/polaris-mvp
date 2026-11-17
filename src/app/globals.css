@@ -228,3 +228,25 @@
 .landing-light .landing-glow {
   opacity: 0.12;
 }
+
+/* Polaris is working: the star rotates slowly (src/components/polaris-working.tsx). With reduced
+   motion it pulses instead of spinning. */
+@keyframes polaris-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes polaris-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.polaris-spin {
+  animation: polaris-spin 2.4s linear infinite;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .polaris-spin {
+    animation: polaris-pulse 1.6s ease-in-out infinite;
+  }
+}

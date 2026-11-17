@@ -29,11 +29,11 @@ export function ModelPicker({
   return (
     <form
       action={setModel}
-      className="relative rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-4 py-3"
+      className="relative rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-4 py-2.5"
     >
       <label
         htmlFor="model-picker"
-        className="flex items-center gap-1.5 font-mono text-xs font-medium uppercase tracking-[0.14em] text-gold"
+        className="flex items-center gap-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-gold"
       >
         <Sparkles className="size-3.5" aria-hidden="true" /> AI model
       </label>
@@ -46,7 +46,7 @@ export function ModelPicker({
           const formData = new FormData(e.currentTarget.form!);
           startTransition(() => setModel(formData));
         }}
-        className="mt-2 h-10 w-full rounded-xl border border-sidebar-border bg-sidebar px-3 text-[0.9375rem] font-medium text-sidebar-foreground [color-scheme:dark] outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 disabled:opacity-70"
+        className="mt-1.5 h-8 w-full rounded-xl border border-sidebar-border bg-sidebar px-2.5 text-[12px] font-medium text-sidebar-foreground [color-scheme:dark] outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 disabled:opacity-70"
       >
         <option value={AUTO_MODEL}>Auto (recommended)</option>
         {MODEL_CATALOG.map((group) => (
@@ -60,7 +60,7 @@ export function ModelPicker({
           </optgroup>
         ))}
       </select>
-      <p className="mt-1.5 text-xs leading-snug text-sidebar-foreground/70" aria-live="polite">
+      <p className="mt-1 text-[11px] leading-snug text-sidebar-foreground/70" aria-live="polite">
         {pending ? "Saving…" : note}
       </p>
       <noscript>

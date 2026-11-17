@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, Contact, LayoutDashboard, PenLine, Receipt, Route, Send, Telescope, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SIDEBAR_CENTER, SIDEBAR_LABEL } from "@/lib/sidebar";
 
 const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean; when?: string }[] = [
   { href: "/profiles", label: "Profiles", icon: UserRound, ready: true },
@@ -30,15 +31,17 @@ function NavLink({ href, label, Icon, active }: { href: string; label: string; I
   return (
     <Link
       href={href}
+      title={label}
       className={cn(
-        "flex items-center gap-3 rounded-full px-4 py-2.5 text-base font-medium transition-colors",
+        "flex items-center gap-2.5 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors",
+        SIDEBAR_CENTER,
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
       )}
     >
-      <Icon className={cn("size-[18px]", active && "text-sidebar-primary")} />
-      {label}
+      <Icon className={cn("size-4 shrink-0", active && "text-sidebar-primary")} />
+      <span className={SIDEBAR_LABEL}>{label}</span>
     </Link>
   );
 }
@@ -46,7 +49,7 @@ function NavLink({ href, label, Icon, active }: { href: string; label: string; I
 export function AppNav() {
   const pathname = usePathname();
   return (
-    <nav className="space-y-1.5">
+    <nav className="space-y-0.5">
       {NAV.map(({ href, label, icon: Icon, ready, when }) => {
         const active = ready && pathname.startsWith(href);
         if (!ready) {
@@ -55,7 +58,7 @@ export function AppNav() {
               key={label}
               aria-disabled="true"
               title={`Planned for ${when}`}
-              className="flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9375rem] text-sidebar-foreground/60"
+              className="flex items-center gap-2.5 rounded-full px-4 py-1.5 text-[13px] text-sidebar-foreground/60"
             >
               <Icon className="size-[18px]" />
               <span className="flex-1">{label}</span>

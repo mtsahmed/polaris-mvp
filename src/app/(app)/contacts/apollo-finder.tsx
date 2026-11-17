@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Mail, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SpinningStar } from "@/components/polaris-working";
 import type { ApolloCandidate } from "@/lib/contacts/apollo-map";
 import { findPeople, revealContact } from "./actions";
 
@@ -53,7 +54,7 @@ export function ApolloFinder({ prospectId, connected }: { prospectId: string; co
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="gradient-outline" onClick={search} disabled={searching}>
-          <Search /> {searching ? "Searching…" : candidates ? "Search again" : "Find people"}
+          {searching ? <SpinningStar /> : <Search />} {searching ? "Searching Apollo…" : candidates ? "Search again" : "Find people"}
         </Button>
         <span className="text-[13px] text-muted-foreground/75 italic">Searching Apollo is free. Getting an email costs 1 Apollo credit.</span>
       </div>

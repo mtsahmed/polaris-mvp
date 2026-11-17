@@ -28,8 +28,10 @@ export function BrandMark({
   className,
   subtitle = true,
   size = "default",
+  textClassName,
 }: {
   className?: string;
+  textClassName?: string; // e.g. hidden when the app sidebar is collapsed
   subtitle?: boolean;
   // "lg" is the landing-page header: a 48px wordmark with the subtitle under it.
   size?: "default" | "lg";
@@ -38,7 +40,7 @@ export function BrandMark({
   return (
     <div className={cn("flex", lg ? "items-start gap-4" : "items-center gap-3", className)}>
       <StarIcon className={lg ? "size-12" : "size-7"} />
-      <div className="leading-none">
+      <div className={cn("leading-none", textClassName)}>
         <div
           className={cn("font-heading font-semibold tracking-tight", lg ? "text-[48px] leading-none" : "text-2xl")}
           style={lg ? { fontFamily: "var(--font-brand-display), 'Space Grotesk', sans-serif", fontWeight: 600 } : undefined}

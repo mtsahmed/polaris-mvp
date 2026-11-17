@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Info, Loader2, MailCheck, RefreshCw, Save, Search, Telescope, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, ChevronDown, Info, MailCheck, RefreshCw, Save, Search, Telescope, Trash2, UserPlus, Users } from "lucide-react";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ConfirmSubmit } from "@/components/confirm-submit";
@@ -8,6 +8,7 @@ import { EmailStatusBadge, UnconfirmedEmailBadge } from "@/components/contact-ba
 import { Field } from "@/components/field";
 import { NextAction } from "@/components/next-action";
 import { PageHeader } from "@/components/page-header";
+import { PolarisWorking } from "@/components/polaris-working";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -248,7 +249,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
           prospects.length ? (
             <div className="flex flex-col items-end gap-1.5">
               <ActionForm action={findAllContacts} className="flex justify-end">
-                <SubmitButton variant="gradient-outline" disabled={!waiting} pendingLabel="Starting…">
+                <SubmitButton variant="gradient-outline" disabled={!waiting} working pendingLabel="Starting searches…">
                   <Search /> {waiting ? `Find contacts for all (${waiting})` : "All companies searched"}
                 </SubmitButton>
               </ActionForm>
@@ -317,10 +318,9 @@ function JobStatus({ prospectId, job, hasContacts, unconfirmed }: { prospectId: 
   const status = job ? effectiveJobStatus(job) : null;
   if (job && (status === "queued" || status === "running")) {
     return (
-      <p className="flex items-center gap-2 text-[0.9375rem] text-muted-foreground">
-        <Loader2 className="size-4 animate-spin text-brand" aria-hidden="true" />
-        Finding contacts… started {when(job.created_at)}. Usually 1–3 minutes.
-      </p>
+      <PolarisWorking panel>
+        Finding contacts… started {when(job.created_at)}. Usually 1–3 minutes; the page updates by itself.
+      </PolarisWorking>
     );
   }
   const line = !job
@@ -351,13 +351,13 @@ function JobStatus({ prospectId, job, hasContacts, unconfirmed }: { prospectId: 
       <div className="flex flex-wrap items-center gap-1">
         {unconfirmed > 0 && (
           <ActionForm action={recheckEmails.bind(null, prospectId)}>
-            <SubmitButton variant="ghost" className="h-9" pendingLabel="Rechecking…">
+            <SubmitButton variant="ghost" className="h-9" working pendingLabel="Rechecking…">
               <MailCheck /> Recheck emails ({unconfirmed}, free)
             </SubmitButton>
           </ActionForm>
         )}
         <ActionForm action={searchAgain.bind(null, prospectId)}>
-          <SubmitButton variant="ghost" className="h-9" pendingLabel="Starting…">
+          <SubmitButton variant="ghost" className="h-9" working pendingLabel="Starting search…">
             {job ? <RefreshCw /> : <Search />} {job ? "Search again" : "Find contacts"}
           </SubmitButton>
         </ActionForm>

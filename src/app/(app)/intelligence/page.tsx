@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Compass, Telescope } from "lucide-react";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { NextAction } from "@/components/next-action";
+import { SpinningStar } from "@/components/polaris-working";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -164,7 +165,15 @@ export default async function IntelligencePage(props: PageProps<"/intelligence">
                               status === "failed" ? "text-destructive" : "text-muted-foreground",
                             )}
                           >
-                            {status ? STATUS_LABEL[status] : "No brief yet"}
+                            {status === "researching" ? (
+                              <span className="inline-flex items-center gap-2 italic">
+                                <SpinningStar /> {STATUS_LABEL[status]}
+                              </span>
+                            ) : status ? (
+                              STATUS_LABEL[status]
+                            ) : (
+                              "No brief yet"
+                            )}
                           </span>
                         )}
                         {brief?.deal_goal && status !== "researching" && (

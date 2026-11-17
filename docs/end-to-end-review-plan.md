@@ -1,6 +1,6 @@
 # Plan: changes from the end-to-end review
 
-Source: `docs/End to end Review.md` (owner's review, 17 November 2026). Status: **batches 1, 3 and 4 built and checked by the owner (17 Nov 2026); batch 2 in progress.** Owner follow-ups also built: logo links to the landing page, Discovery inner scroll hands over to the page, Shortlisted and Other contacts rows collapse, Dashboard link under Workspace with #527AF8 stage headings.
+Source: `docs/End to end Review.md` (owner's review, 17 November 2026). Status: **batches 1, 3 and 4 built and checked by the owner (17 Nov 2026); batch 2 built (rotating Polaris star, rule in docs/design-guide.md).** Owner follow-ups also built: logo links to the landing page, Discovery inner scroll hands over to the page, Shortlisted and Other contacts rows collapse, Dashboard link under Workspace with #527AF8 stage headings.
 Nine points (point 9 dropped), grouped into four batches so each can be checked in the browser before the next.
 
 ## Batch 1: step-by-step flow and quick layout fixes

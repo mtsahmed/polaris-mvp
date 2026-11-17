@@ -10,6 +10,7 @@ export const ACTIVE_ORG_COOKIE = "polaris_org";
 export type SessionContext = {
   userId: string;
   email: string | null;
+  fullName: string | null; // from sign-up (user_metadata.full_name); null for older accounts
   org: Organization;
   role: MemberRole;
   orgs: (Organization & { role: MemberRole })[];
@@ -46,6 +47,7 @@ export const requireSession = cache(async (): Promise<SessionContext> => {
   return {
     userId: claims.sub,
     email: (claims.email as string | undefined) ?? null,
+    fullName: ((claims.user_metadata as { full_name?: string } | undefined)?.full_name ?? "").trim() || null,
     org: { id: active.id, name: active.name },
     role: active.role,
     orgs,

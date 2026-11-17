@@ -67,3 +67,22 @@ Agreed 16 November 2026 on the Contacts table (`src/app/(app)/contacts/page.tsx`
 - Sources in a dense table are an info icon (`Info`, 16px). Hover shows the source and its full link; clicking opens the page. This replaces `SourceChip` inside tables only.
 - Row actions are icon-only (`Trash2` for delete) with a hover title and screen-reader text. Delete still asks for confirmation (`ConfirmSubmit`).
 - Empty cells show a muted dash.
+
+## Polaris is working
+
+Agreed 17 November 2026 (owner review). Site-wide rule: whenever Polaris does its own work in the
+background or makes the user wait (research, finding companies or contacts, drafting, scoring,
+writing emails), show the rotating Polaris star and say in one line what is happening. Components
+are in `src/components/polaris-working.tsx`.
+
+- **Buttons:** `<SubmitButton working pendingLabel="Finding companies…">`. While the request runs the
+  star spins before the label. Plain saves, approvals and deletes keep their short "Saving…" label
+  without the star.
+- **Long waits inside a form** (about a minute or more): add `<PolarisWorkingWhilePending>` with one
+  sentence on what Polaris is doing and how long it takes. It shows only while the form is submitting.
+- **Background work the page waits for** (Intelligence research, contact search): `<PolarisWorking panel>`,
+  a dashed brand-tinted panel with a larger star. The text uses the side-note style (13px, italic, grey)
+  and says when it started, how long it usually takes and that the page updates by itself.
+- **In a list** (a company still researching): `<SpinningStar />` before the status word.
+- The star rotates once every 2.4 seconds. With the system's reduce-motion setting it pulses instead
+  (`.polaris-spin` in `globals.css`).

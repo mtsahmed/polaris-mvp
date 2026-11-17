@@ -1,6 +1,7 @@
 import { Ban, CheckCircle2, History, Sparkles, UsersRound } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field } from "@/components/field";
+import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,9 +47,12 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
             </CardDescription>
           </div>
           <ActionForm action={draftIcpWithClaude.bind(null, profile.id)}>
-            <SubmitButton variant="gradient-outline" pendingLabel="Drafting…">
+            <SubmitButton variant="gradient-outline" working pendingLabel="Drafting…">
               <Sparkles /> Draft with AI
             </SubmitButton>
+            <PolarisWorkingWhilePending className="mt-3 max-w-xs">
+              Polaris is drafting the ideal customer profile. Up to a minute.
+            </PolarisWorkingWhilePending>
           </ActionForm>
         </CardHeader>
         <CardContent className="space-y-6">
