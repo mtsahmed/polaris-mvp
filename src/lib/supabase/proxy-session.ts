@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-// The dark route map (public/how-it-works.html) is a public showpiece; the light one is for signed-in pages.
-const PUBLIC_PATHS = ["/login", "/auth", "/how-it-works.html"];
+// "/" is the public landing page with the dark route map (public/how-it-works.html); the light
+// copy is for signed-in pages only.
+const PUBLIC_PATHS = ["/", "/login", "/auth", "/how-it-works.html"];
 
 // Refreshes the Supabase session on every request and keeps signed-out users on public pages.
 export async function updateSession(request: NextRequest) {
@@ -32,7 +33,7 @@ export async function updateSession(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+  const isPublic = PUBLIC_PATHS.some((p) => path === p || (p !== "/" && path.startsWith(`${p}/`)));
 
   if (!signedIn && !isPublic) {
     const url = request.nextUrl.clone();

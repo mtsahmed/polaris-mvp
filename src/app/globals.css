@@ -209,3 +209,17 @@
     --gradient-fill: color-mix(in oklch, var(--card), var(--brand) 7%);
   }
 }
+
+/* Landing page light background (toggle in src/app/landing-shell.tsx). The landing is built on the
+   sidebar tokens, so this scope repoints them to the light surfaces. */
+.landing-light {
+  --sidebar: oklch(0.982 0.003 265);
+  --sidebar-foreground: oklch(0.17 0.03 265);
+  --sidebar-accent: oklch(0.95 0.006 265);
+  --sidebar-accent-foreground: oklch(0.17 0.03 265);
+  --sidebar-border: oklch(0.9 0.008 265);
+  --gold: oklch(0.6 0.13 80);
+}
+.landing-light .landing-glow {
+  opacity: 0.12;
+}

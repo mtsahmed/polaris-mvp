@@ -2,12 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const SRC = "/how-it-works-light.html";
 const FALLBACK_HEIGHT = 1400;
 
-// The light route map (public/how-it-works-light.html) in an iframe. The page posts its own
-// height, so the frame grows with the content instead of scrolling inside the app.
-export function HowItWorksEmbed({ className }: { className?: string }) {
+// A route map (public/how-it-works.html or its light copy) in an iframe. The page posts its own
+// height, so the frame grows with the content instead of scrolling inside the page.
+export function HowItWorksEmbed({
+  src = "/how-it-works-light.html",
+  theme,
+  className,
+}: {
+  src?: "/how-it-works.html" | "/how-it-works-light.html";
+  // Landing page only: switches the dark map between its dark and light backgrounds.
+  theme?: "dark" | "light";
+  className?: string;
+}) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(FALLBACK_HEIGHT);
 
@@ -23,10 +31,20 @@ export function HowItWorksEmbed({ className }: { className?: string }) {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  useEffect(() => {
+    if (!theme) return;
+    const el = frame.current;
+    const send = () =>
+      el?.contentWindow?.postMessage({ type: "polaris-theme", theme }, window.location.origin);
+    send();
+    el?.addEventListener("load", send);
+    return () => el?.removeEventListener("load", send);
+  }, [theme]);
+
   return (
     <iframe
       ref={frame}
-      src={SRC}
+      src={src}
       title="How Polaris works"
       className={className}
       style={{ width: "100%", height, border: 0, display: "block" }}

@@ -24,14 +24,31 @@ export function StarIcon({ className, plain = false }: { className?: string; pla
   );
 }
 
-export function BrandMark({ className, subtitle = true }: { className?: string; subtitle?: boolean }) {
+export function BrandMark({
+  className,
+  subtitle = true,
+  size = "default",
+}: {
+  className?: string;
+  subtitle?: boolean;
+  // "lg" is the landing-page header: a 48px wordmark with the subtitle under it.
+  size?: "default" | "lg";
+}) {
+  const lg = size === "lg";
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <StarIcon className="size-7" />
+    <div className={cn("flex", lg ? "items-start gap-4" : "items-center gap-3", className)}>
+      <StarIcon className={lg ? "size-12" : "size-7"} />
       <div className="leading-none">
-        <div className="font-heading text-2xl font-semibold tracking-tight">{brand.productName}</div>
+        <div
+          className={cn("font-heading font-semibold tracking-tight", lg ? "text-[48px] leading-none" : "text-2xl")}
+          style={lg ? { fontFamily: "var(--font-brand-display), 'Space Grotesk', sans-serif", fontWeight: 600 } : undefined}
+        >
+          {brand.productName}
+        </div>
         {subtitle && (
-          <div className="mt-1.5 font-mono text-xs font-medium tracking-wide opacity-80">by {brand.companyName}</div>
+          <div className={cn("font-mono font-medium tracking-wide opacity-80", lg ? "mt-2 text-sm" : "mt-1.5 text-xs")}>
+            by {brand.companyName}
+          </div>
         )}
       </div>
     </div>
