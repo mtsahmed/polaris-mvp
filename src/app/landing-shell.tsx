@@ -14,8 +14,30 @@ type LandingTheme = "dark" | "light";
 
 // Landing page frame: header with the background toggle and Sign in, the hero (children), then the
 // route map. Dark is the default; the visitor's choice is kept in this browser only.
-export function LandingShell({ children, signedIn = false }: { children: ReactNode; signedIn?: boolean }) {
+export function LandingShell({
+  children,
+  after,
+  signedIn = false,
+}: {
+  children: ReactNode;
+  after?: ReactNode; // sections below the route map
+  signedIn?: boolean;
+}) {
   const [theme, setTheme] = useState<LandingTheme>("dark");
+  // The header slides away while scrolling down past it and comes back on any scroll up, so the
+  // page gets the full screen height while reading.
+  const [headerHidden, setHeaderHidden] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 6) return;
+      setHeaderHidden(y > last && y > 120);
+      last = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     try {
@@ -57,7 +79,12 @@ export function LandingShell({ children, signedIn = false }: { children: ReactNo
         plain
         className="pointer-events-none absolute -right-24 top-0 size-96 text-sidebar-foreground opacity-[0.04]"
       />
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-sidebar-border bg-sidebar/95 px-5 py-3 backdrop-blur sm:px-8">
+      <header
+        className={cn(
+          "sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-sidebar-border bg-sidebar/95 px-5 py-3 backdrop-blur transition-transform duration-300 focus-within:translate-y-0 sm:px-8 motion-reduce:transition-none",
+          headerHidden && "-translate-y-full",
+        )}
+      >
         <BrandMark size="lg" />
         <div className="flex items-center gap-3">
           <button
@@ -83,7 +110,8 @@ export function LandingShell({ children, signedIn = false }: { children: ReactNo
 
       {children}
 
-      <HowItWorksEmbed src="/how-it-works.html" theme={theme} className="relative" />
+      <HowItWorksEmbed src={after ? "/how-it-works.html?nodiff=1" : "/how-it-works.html"} theme={theme} className="relative" fixed />
+      {after}
     </main>
   );
 }

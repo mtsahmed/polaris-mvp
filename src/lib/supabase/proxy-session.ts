@@ -4,7 +4,7 @@ import { publicEnv } from "@/lib/env";
 
 // "/" is the public landing page with the dark route map (public/how-it-works.html); the light
 // copy is for signed-in pages only.
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/how-it-works.html"];
+const PUBLIC_PATHS = ["/", "/login", "/auth", "/how-it-works.html", "/api/impact-report"];
 
 // Refreshes the Supabase session on every request and keeps signed-out users on public pages.
 export async function updateSession(request: NextRequest) {

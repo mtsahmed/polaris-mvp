@@ -5,4 +5,6 @@ export const brand = {
   companyName: "TiffanyAI",
   fullName: "Polaris by TiffanyAI",
   tagline: "From profile to pipeline, with every claim sourced.",
+  website: "https://tiffanyaisys.com",
+  contactEmail: "info@tiffanyaisys.com",
 } as const;

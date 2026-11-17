@@ -60,6 +60,10 @@ h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.25}
 .phead{display:flex;flex-direction:column;gap:2px}
 .phead p{color:var(--muted)}
 .cols{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:16px}
+.cols.wide{grid-template-columns:1fr 1fr}
+.cols.wide .extra{grid-column:1/-1}
+.fitgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;align-items:start}
+.fitcol{display:flex;flex-direction:column;gap:10px}
 .block{display:flex;flex-direction:column;gap:6px;font-size:15px}
 .block h3{color:var(--sky)}
 .block ul{padding-left:20px;display:flex;flex-direction:column;gap:3px}
@@ -105,7 +109,7 @@ ol.glance{padding-left:24px}
 ol.glance b{color:var(--ink)}
 .shrink h2{font-size:clamp(17px,2.4vw,22px)}
 section{display:flex;flex-direction:column;gap:12px;margin:21px 0 5px}
-@media (max-width:860px){.cols{grid-template-columns:1fr}}
+@media (max-width:860px){.cols,.cols.wide,.fitgrid{grid-template-columns:1fr}}
 
 /* guided tour */
 #cur{position:absolute;left:0;top:0;z-index:5;width:26px;height:26px;pointer-events:none;opacity:0;transform:translate(60px,60px);transition:transform .9s cubic-bezier(.45,.05,.2,1),opacity .4s;filter:drop-shadow(0 3px 6px rgba(10,15,28,.35))}
@@ -163,7 +167,7 @@ section{display:flex;flex-direction:column;gap:12px;margin:21px 0 5px}
   </article>
 
 
-  <section>
+  <section id="different">
     <span class="eyebrow">What makes Polaris different</span>
     <div class="five">
       <div><h3>A source behind every claim.</h3> <p>Each rating shows its reason and the page it came from.</p></div>
@@ -243,13 +247,17 @@ STOPS.forEach(function(s,i){
 
 var MARKS=[["Not confirmed","hl"],["hyper-personalized","hl-green"]];
 function list(id,items){var u=$(id);u.textContent="";items.forEach(function(t){var li=el("li"),m=null,i=-1;MARKS.forEach(function(p){var j=t.indexOf(p[0]);if(j>=0&&!m){m=p;i=j}});if(!m)li.textContent=t;else{li.appendChild(document.createTextNode(t.slice(0,i)));li.appendChild(el("span",m[1],m[0]));li.appendChild(document.createTextNode(t.slice(i+m[0].length)))}u.appendChild(li)})}
-var measuring=false;
+var measuring=false,maxPage=0,FIXED=new URLSearchParams(location.search).has("fixed");
+/* Landing page: a tighter layout so the fixed box stays short. */
+if(FIXED)document.body.classList.add("fixed");
 function go(i){
   var h0=$("panel").offsetHeight;
   cur=i;seen[i]=true;var s=STOPS[i];done.style.strokeDashoffset=total-cum[i];var pn=$("panel");pn.classList.remove("flip");void pn.offsetWidth;pn.classList.add("flip");
   $("p-eyebrow").textContent=s.k;$("p-title").textContent=s.name;$("p-tag").textContent=s.tag;
   list("p-you",s.you);list("p-pol",s.pol);$("p-gate").textContent=s.gate;
   var x=$("p-extra");x.textContent="";
+  /* The fit-score step gives its widget the full panel width under the two lists, in two columns. */
+  document.querySelector(".cols").classList.toggle("wide",s.widget==="fit");
   if(s.widget==="fit")fitWidget(x);else if(s.widget==="contacts")contactsWidget(x);else if(s.widget==="outreach")outreachWidget(x);
   else{x.appendChild(el("span","tag","Why this is different"));x.appendChild(el("h3",null,s.diff[0]));x.appendChild(el("p",null,s.diff[1]))}
   var stops=map.querySelectorAll(".stop");
@@ -282,10 +290,12 @@ function fitWidget(x){
     [["Unknown",-1],["None",0],["Weak",5],["Some",10],["Strong",15],["Exact",20]].forEach(function(o){var op=el("option",null,o[0]);op.value=o[1];if(o[1]===vals[i])op.selected=true;s.appendChild(op)});
     s.addEventListener("change",function(){vals[i]=+s.value;choice=null;draw()});g.appendChild(l);g.appendChild(s);
   });
-  x.appendChild(g);
+  /* Two columns: the criteria on the left, the score and your call on the right. */
+  var fg=el("div","fitgrid"),left=el("div","fitcol");fg.appendChild(left);x.appendChild(fg);
+  left.appendChild(g);
   var kl=el("label","check");var kc=el("input");kc.type="checkbox";kc.id="knock";kc.checked=knock;kl.appendChild(kc);kl.appendChild(document.createTextNode("A sourced finding shows this company is a competitor"));
-  kc.addEventListener("change",function(){knock=kc.checked;choice=null;draw()});x.appendChild(kl);
-  var out=el("div","block");x.appendChild(out);
+  kc.addEventListener("change",function(){knock=kc.checked;choice=null;draw()});left.appendChild(kl);
+  var out=el("div","block");fg.appendChild(out);
   function draw(){
     out.textContent="";
     var known=vals.filter(function(v){return v>=0}),n=known.length,rec,band,cls,score=null;
@@ -349,16 +359,35 @@ go(0);
 /* The panel never shrinks below its tallest ordinary step, and grows smoothly for the steps with a widget,
    so changing steps (or the tour) does not make the page jump. */
 function settleHeight(){
-  var pn=$("panel"),m=document.querySelector("main"),keepSeen=seen,keepCur=cur,max=0;
-  measuring=true;m.classList.add("measuring");pn.style.minHeight="";pn.style.height="";
-  seen={};
-  for(var i=0;i<STOPS.length;i++){if(STOPS[i].widget)continue;go(i);max=Math.max(max,pn.offsetHeight)}
+  var pn=$("panel"),m=document.querySelector("main"),keepSeen=seen,keepCur=cur,max=0,all=0,intro=document.querySelector(".intro");
+  measuring=true;m.classList.add("measuring");pn.style.minHeight="";pn.style.height="";intro.style.minHeight="";
+  /* Every stop counted as seen, so the progress line is at its longest ("You know the whole route"
+     wraps to a second line on some widths). */
+  seen={};for(var q=0;q<STOPS.length;q++)seen[q]=true;
+  /* all: the page height with its tallest step showing, widget steps included in each of their
+     states (fit: every choice, with and without a knockout; outreach: sent, replied). The landing
+     page sizes its frame from it, so nothing below the map moves while the route changes. */
+  var keep=[choice,knock,sent,replied],tallest=0,bodyH=function(){all=Math.max(all,document.body.getBoundingClientRect().height);tallest=Math.max(tallest,pn.offsetHeight)};
+  for(var i=0;i<STOPS.length;i++){
+    var w=STOPS[i].widget;
+    if(w==="fit"){[false,true].forEach(function(k){[null,"pursue","hold","skip"].forEach(function(c){knock=k;choice=c;go(i);bodyH()})})}
+    else if(w==="outreach"){[[false,false],[true,false],[true,true]].forEach(function(o){sent=o[0];replied=o[1];go(i);bodyH()})}
+    else{go(i);bodyH();if(!w)max=Math.max(max,pn.offsetHeight)}
+  }
+  choice=keep[0];knock=keep[1];sent=keep[2];replied=keep[3];
+  maxPage=Math.ceil(all)+16;
+  /* ?fixed (landing page): the panel keeps the height of its tallest step, so the buttons under it
+     and everything below the frame stay put. */
+  if(FIXED){max=tallest;intro.style.minHeight=intro.offsetHeight+"px"}
   seen=keepSeen;go(keepCur);
   pn.style.minHeight=max+"px";
   void m.offsetWidth;m.classList.remove("measuring");measuring=false;
+  if(window.reportHeight)window.reportHeight();
 }
 settleHeight();
 addEventListener("load",settleHeight);
+/* Web fonts change line wraps, so measure again once they are in. */
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(settleHeight);
 (function(){var t;addEventListener("resize",function(){clearTimeout(t);t=setTimeout(settleHeight,150)})})();
 
 /* guided tour: a cursor walks the route from sign-up to pipeline */
@@ -395,7 +424,13 @@ document.addEventListener("keydown",function(e){if(e.isTrusted&&playing&&e.targe
 (function(){
   if(window.parent===window)return;
   document.body.classList.add("embedded");
-  function report(){window.parent.postMessage({type:"polaris-how-it-works-height",height:document.documentElement.scrollHeight},location.origin)}
+  /* The landing page shows its impact calculator above this section, so it renders the section itself. */
+  if(new URLSearchParams(location.search).has("nodiff")){var d=document.getElementById("different");if(d)d.style.display="none"}
+  /* height: the content now. maxHeight: the content with the tallest step showing (fixed-height frames). */
+  function report(){var h=Math.ceil(document.body.getBoundingClientRect().height);window.parent.postMessage({type:"polaris-how-it-works-height",height:h,maxHeight:Math.max(h,maxPage)},location.origin)}
+  window.reportHeight=report;
+  /* The parent asks once it is listening, since a report sent before that is lost. */
+  addEventListener("message",function(e){if(e.origin===location.origin&&e.data&&e.data.type==="polaris-height-request")report()});
   if("ResizeObserver" in window)new ResizeObserver(report).observe(document.body);
   addEventListener("load",report);report();
 })();

@@ -1,5 +1,7 @@
 import { brand } from "@/config/brand";
 import { createClient } from "@/lib/supabase/server";
+import { ImpactCalculator } from "@/components/impact-calculator";
+import { ImpactReportForm } from "@/components/impact-report-form";
 import { LandingShell } from "./landing-shell";
 
 // What Polaris does, in route order.
@@ -22,7 +24,16 @@ export default async function Home() {
   const signedIn = Boolean(data?.claims?.sub);
 
   return (
-    <LandingShell signedIn={signedIn}>
+    <LandingShell
+      signedIn={signedIn}
+      after={
+        <>
+          <ImpactCalculator />
+          <Different />
+          <ImpactReportForm />
+        </>
+      }
+    >
       <section className="relative px-5 pb-6 pt-12 sm:px-8 lg:pt-16">
         <div className="relative mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <div className="space-y-6">
@@ -53,5 +64,35 @@ export default async function Home() {
         </div>
       </section>
     </LandingShell>
+  );
+}
+
+// Shown below the impact calculator (owner request, 17 Nov 2026). Same text as the "What makes
+// Polaris different" section of public/how-it-works.html, which the landing embed hides (?nodiff);
+// keep the two in step.
+const DIFFERENT: [string, string][] = [
+  ["A source behind every claim.", "Each rating shows its reason and the page it came from."],
+  ["Unknown is not a low score.", "Missing evidence is shown as Unknown and left out of the score."],
+  ["Polaris recommends, you decide.", "Pursue, hold or skip is your call, and you can override the recommendation."],
+  ["Research before contact spend.", "Contact credits are used only on companies you chose to pursue."],
+  ["Nothing is sent without approval.", "A named person approves every message before it goes out."],
+];
+
+function Different() {
+  return (
+    <section aria-labelledby="different-title" className="relative px-5 pt-10 pb-16 sm:px-8">
+      <div className="mx-auto max-w-[1120px] space-y-5">
+        <h2 id="different-title" className="kicker text-gold">
+          What makes Polaris different
+        </h2>
+        <div className="grid gap-x-10 gap-y-3.5 text-[17px] leading-relaxed text-sidebar-foreground/75 md:grid-cols-2">
+          {DIFFERENT.map(([title, body]) => (
+            <p key={title}>
+              <strong className="font-semibold text-sidebar-foreground">{title}</strong> {body}
+            </p>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
