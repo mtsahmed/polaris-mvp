@@ -75,6 +75,10 @@ export type Icp = {
   geographies: string[];
   titles: string[];
   problems_addressed: string[];
+  // Knockouts: a company that matches one is "Not a fit" whatever its score.
+  excluded_geographies: string[];
+  competitors: string[];
+  min_employees: number | null;
   notes: string | null;
   approved: boolean;
   approved_by: string | null;

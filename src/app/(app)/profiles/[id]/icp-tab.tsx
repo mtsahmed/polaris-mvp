@@ -1,8 +1,9 @@
-import { CheckCircle2, History, Sparkles, UsersRound } from "lucide-react";
+import { Ban, CheckCircle2, History, Sparkles, UsersRound } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field } from "@/components/field";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { brand } from "@/config/brand";
 import type { Icp, Profile } from "@/lib/types";
@@ -68,6 +69,48 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                 <Textarea id="notes" name="notes" rows={5} defaultValue={latest?.notes ?? ""} className={ICP_BOX} />
               </Field>
             </div>
+
+            {/* Knockouts: hard "not a fit" rules for Intelligence briefs. */}
+            <fieldset className="space-y-4 rounded-2xl border border-dashed p-5">
+              <legend className="flex items-center gap-2 px-2 font-semibold">
+                <Ban className="size-4 text-brand" aria-hidden="true" /> Not a fit if…
+              </legend>
+              <p className="text-sm text-muted-foreground">
+                A company that matches one of these is marked &ldquo;Not a fit&rdquo; in Intelligence whatever its score, and
+                only when a source shows it. Direct competitors are always checked. Leave a field empty to skip that check.
+              </p>
+              <div className="grid gap-5 md:grid-cols-3">
+                <Field id="excluded_geographies" label="Excluded geographies" hint="One per line, e.g. Canada">
+                  <Textarea
+                    id="excluded_geographies"
+                    name="excluded_geographies"
+                    rows={3}
+                    defaultValue={latest?.excluded_geographies?.join("\n") ?? ""}
+                    className="field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6"
+                  />
+                </Field>
+                <Field id="competitors" label="Competitors" hint="Company names, one per line">
+                  <Textarea
+                    id="competitors"
+                    name="competitors"
+                    rows={3}
+                    defaultValue={latest?.competitors?.join("\n") ?? ""}
+                    className="field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6"
+                  />
+                </Field>
+                <Field id="min_employees" label="Minimum company size" hint="Employees. Smaller companies are not a fit.">
+                  <Input
+                    id="min_employees"
+                    name="min_employees"
+                    type="number"
+                    min={1}
+                    step={1}
+                    inputMode="numeric"
+                    defaultValue={latest?.min_employees ?? ""}
+                  />
+                </Field>
+              </div>
+            </fieldset>
             <SubmitButton variant="gradient-outline">Save draft</SubmitButton>
           </ActionForm>
 

@@ -4,10 +4,13 @@
 // - A match only fills empty fields; it never replaces a detail the user or another source saved,
 //   and never turns a verified email into an unverified one.
 // - A confirmed email replaces a "not confirmed" one for the same person and clears the mark.
+// - A company-wide line ("Main office", "Natura HQ"…) that carries only an office number already
+//   saved for this company is a duplicate and is skipped. Named people are never skipped this way.
 // - Everything else becomes a new contact (de-duplicated within the batch too).
 
 import type { VerificationStatus } from "@/lib/types";
 import type { FoundContact } from "./sources/types";
+import { digits } from "./verify";
 
 export type ExistingContact = {
   id: string;
@@ -38,11 +41,33 @@ function samePerson(a: Who, b: Who) {
   return lower(a.name) === lower(b.name);
 }
 
+// Names the sources give company-wide contacts rather than people: "Main office", "General inbox",
+// "Office line +1…", or AI labels such as "Natura HQ" or "Front desk".
+const COMPANY_WIDE =
+  /^(main office|general inbox|office line\b)|\b(hq|headquarters|head office|main (office|line)|office|switchboard|reception|front desk|inbox|customer (service|care)|support)\b/i;
+export const isCompanyWideName = (name: string) => COMPANY_WIDE.test(name.trim());
+
+const lineKey = (phone: string | null | undefined) => (phone ? digits(phone).slice(-10) : "");
+
 export function mergeFound(existing: ExistingContact[], found: FoundContact[]) {
   const inserts: FoundContact[] = [];
   const updates = new Map<string, ContactPatch>();
 
   for (const f of found) {
+    // A company-wide line that adds nothing but a number this company already has.
+    const key = lineKey(f.phone);
+    if (
+      key.length === 10 &&
+      !f.email &&
+      !f.mobile &&
+      !f.whatsapp &&
+      !f.apolloId &&
+      isCompanyWideName(f.name) &&
+      (existing.some((e) => lineKey({ ...e, ...updates.get(e.id) }.phone) === key) ||
+        inserts.some((i) => lineKey(i.phone) === key))
+    )
+      continue;
+
     const fWho: Who = { name: f.name, email: f.email, unconfirmed: f.emailUnconfirmed, apolloId: f.apolloId };
     // An exact email match wins over a name match, so an address already saved under one contact
     // is not copied onto another with the same name.

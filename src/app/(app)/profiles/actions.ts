@@ -378,9 +378,11 @@ async function latestIcp(supabase: Awaited<ReturnType<typeof createClient>>, pro
   return data;
 }
 
-type IcpFields = Pick<Icp, "industries" | "company_traits" | "geographies" | "titles" | "problems_addressed" | "notes">;
+type IcpFields = Pick<Icp, "industries" | "company_traits" | "geographies" | "titles" | "problems_addressed" | "notes"> &
+  Partial<Pick<Icp, "excluded_geographies" | "competitors" | "min_employees">>;
 
-// Edits the current draft, or starts a new version if the latest one is already approved.
+// Edits the current draft, or starts a new version if the latest one is already approved. A new
+// version keeps the previous knockouts unless the fields say otherwise (the AI draft never sets them).
 async function writeIcp(profileId: string, orgId: string, fields: IcpFields) {
   const supabase = await createClient();
   const latest = await latestIcp(supabase, profileId);
@@ -388,6 +390,9 @@ async function writeIcp(profileId: string, orgId: string, fields: IcpFields) {
     return supabase.from("icps").update(fields).eq("id", latest.id);
   }
   return supabase.from("icps").insert({
+    excluded_geographies: latest?.excluded_geographies ?? [],
+    competitors: latest?.competitors ?? [],
+    min_employees: latest?.min_employees ?? null,
     ...fields,
     org_id: orgId,
     profile_id: profileId,
@@ -435,10 +440,19 @@ export async function saveIcp(profileId: string, _prev: ActionState, formData: F
     geographies: lines(formData.get("geographies")),
     titles: lines(formData.get("titles")),
     problems_addressed: lines(formData.get("problems_addressed")),
+    excluded_geographies: lines(formData.get("excluded_geographies")),
+    competitors: lines(formData.get("competitors")),
+    min_employees: null,
     notes: text(formData.get("notes")),
   };
   if (fields.industries.length === 0 || fields.titles.length === 0) {
     return fail("An ICP needs at least one industry and one job title.");
+  }
+  const minEmployees = text(formData.get("min_employees"));
+  if (minEmployees) {
+    const n = Number(minEmployees);
+    if (!Number.isInteger(n) || n < 1) return fail("Minimum company size must be a whole number of employees, 1 or more.");
+    fields.min_employees = n;
   }
   const { error } = await writeIcp(profileId, session.org.id, fields);
   if (error) return fail(error.message);

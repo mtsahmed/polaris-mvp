@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fail, ok, text, type ActionState } from "@/lib/action-state";
 import { startContactJob } from "@/lib/contacts/jobs";
-import { startBrief } from "@/lib/intelligence/run";
+import { scoreForGoal } from "@/lib/intelligence/assemble";
+import { startBrief, startRescore } from "@/lib/intelligence/run";
 import type { Brief } from "@/lib/intelligence/types";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import type { Prospect, ProspectDecision } from "@/lib/types";
+import { DEAL_TYPES, type DealType, type Profile, type Prospect, type ProspectDecision } from "@/lib/types";
 
 function revalidate(prospectId: string) {
   revalidatePath("/intelligence");
@@ -22,6 +23,45 @@ export async function researchProspect(prospectId: string, _prev: ActionState): 
   const started = await startBrief(supabase, session.org.id, prospectId);
   revalidate(prospectId);
   return started.ok ? ok("Research started. The brief appears here in a few minutes.") : fail(started.message);
+}
+
+// Re-scores from saved findings (no web search): for briefs scored the earlier way, or after
+// the ICP's knockouts change.
+export async function rescoreProspect(prospectId: string, _prev: ActionState): Promise<ActionState> {
+  const session = await requireSession();
+  const supabase = await createClient();
+  const started = await startRescore(supabase, session.org.id, prospectId);
+  revalidate(prospectId);
+  return started.ok ? ok("Re-scoring from the saved findings. No new web research; this takes under a minute.") : fail(started.message);
+}
+
+// Changes the deal goal a brief is scored for. Both criteria sets were rated during research, so
+// this only recomputes the score and recommendation: no AI call, no cost.
+export async function setDealGoal(prospectId: string, briefId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireSession();
+  const goal = String(formData.get("goal") ?? "") as DealType;
+  if (!DEAL_TYPES.includes(goal)) return fail("Choose a deal goal.");
+  const supabase = await createClient();
+  const [{ data: brief }, { data: prospect }] = await Promise.all([
+    supabase.from("briefs").select("*").eq("id", briefId).eq("prospect_id", prospectId).maybeSingle<Brief>(),
+    supabase.from("prospects").select("profile_id").eq("id", prospectId).maybeSingle<Pick<Prospect, "profile_id">>(),
+  ]);
+  if (!brief || !prospect) return fail("Brief not found.");
+  if (!brief.criteria_sets) return fail("This brief was scored the earlier way. Re-score it first.");
+  const { data: profile } = await supabase.from("profiles").select("type").eq("id", prospect.profile_id).maybeSingle<Pick<Profile, "type">>();
+  const scored = scoreForGoal({
+    goal,
+    criteria_sets: brief.criteria_sets,
+    knockouts: brief.knockouts,
+    fit_case: brief.fit_case,
+    hasTiming: brief.why_now.length > 0,
+    hasSources: brief.signal_ids.length > 0,
+    profileType: profile?.type,
+  });
+  const { error } = await supabase.from("briefs").update(scored).eq("id", briefId);
+  if (error) return fail(error.message);
+  revalidate(prospectId);
+  return ok("Scored for the new goal.");
 }
 
 const DECISIONS: ProspectDecision[] = ["pursue", "hold", "skip"];

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ageLabel, bandLabel, bandTone, effectiveStatus, STATUS_LABEL } from "@/lib/intelligence/display";
+import { applicableKnockout, GOAL_PHRASE } from "@/lib/intelligence/fit";
 import { RECOMMENDATION_LABEL, type Brief } from "@/lib/intelligence/types";
 import { activeProfile } from "@/lib/profile-selection";
 import { createClient } from "@/lib/supabase/server";
@@ -73,6 +74,9 @@ export default async function IntelligencePage(props: PageProps<"/intelligence">
   const latest = new Map<string, Brief>();
   for (const b of briefRows ?? []) if (!latest.has(b.prospect_id)) latest.set(b.prospect_id, b);
 
+  const knockedOut = (b: Brief | null) => Boolean(b?.deal_goal && applicableKnockout(b.knockouts ?? [], b.deal_goal));
+  // Highest score first; knocked-out companies below every scored one, then those with no score.
+  const sortKey = (b: Brief | null) => (knockedOut(b) ? -0.5 : (b?.fit_score ?? -1));
   const all = (rows ?? []).map((r) => ({ row: r, brief: latest.get(r.id) ?? null }));
   const counts: Record<FilterKey, number> = {
     review: all.filter((x) => x.row.decision === "none").length,
@@ -82,7 +86,7 @@ export default async function IntelligencePage(props: PageProps<"/intelligence">
   };
   const shown = all
     .filter((x) => (filter === "review" ? x.row.decision === "none" : x.row.decision === filter))
-    .sort((a, b) => (b.brief?.fit_score ?? -1) - (a.brief?.fit_score ?? -1));
+    .sort((a, b) => sortKey(b.brief) - sortKey(a.brief));
   const running = all.some((x) => x.brief && effectiveStatus(x.brief) === "researching");
 
   return (
@@ -146,7 +150,9 @@ export default async function IntelligencePage(props: PageProps<"/intelligence">
                         <div className="truncate text-sm text-muted-foreground">{row.companies?.domain}</div>
                       </div>
                       <div>
-                        {status === "ready" && brief?.fit_score !== null && brief ? (
+                        {brief && status !== "researching" && status !== "failed" && knockedOut(brief) ? (
+                          <span className="text-sm font-semibold text-destructive">Not a fit</span>
+                        ) : status === "ready" && brief?.fit_score !== null && brief ? (
                           <span className={cn("font-semibold", bandTone(brief.fit_band))}>
                             <span className="font-heading text-2xl tabular-nums">{brief.fit_score}</span>{" "}
                             <span className="text-sm">{band}</span>
@@ -160,6 +166,11 @@ export default async function IntelligencePage(props: PageProps<"/intelligence">
                           >
                             {status ? STATUS_LABEL[status] : "No brief yet"}
                           </span>
+                        )}
+                        {brief?.deal_goal && status !== "researching" && (
+                          <div className="text-[13px] text-muted-foreground/75 italic">
+                            {GOAL_PHRASE[brief.deal_goal]}
+                          </div>
                         )}
                       </div>
                       <div className="text-sm">

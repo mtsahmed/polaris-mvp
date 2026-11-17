@@ -31,6 +31,27 @@ const existing = (over: Partial<ExistingContact>): ExistingContact => ({
 });
 
 describe("mergeFound", () => {
+  it("skips a company-wide line whose number is already saved, however it is written", () => {
+    const saved = existing({ name: "Main office", title: "San Antonio HQ", phone: "+18882842257" });
+    const r = mergeFound([saved], [found({ name: "Natura HQ", phone: "(888) 284-2257" })]);
+    expect(r.inserts).toHaveLength(0);
+    expect(r.updates).toHaveLength(0);
+  });
+
+  it("skips the same company-wide line twice in one batch", () => {
+    const r = mergeFound([], [found({ name: "Main office", phone: "+18882842257" }), found({ name: "Headquarters", phone: "888.284.2257" })]);
+    expect(r.inserts.map((i) => i.name)).toEqual(["Main office"]);
+  });
+
+  it("keeps a named person who shares the main line, and a company line with a new number", () => {
+    const saved = existing({ name: "Main office", phone: "+18882842257" });
+    const r = mergeFound([saved], [
+      found({ name: "Jane Doe", title: "Office Manager", phone: "888-284-2257" }),
+      found({ name: "Office line +15122587357", phone: "+15122587357" }),
+    ]);
+    expect(r.inserts.map((i) => i.name)).toEqual(["Jane Doe", "Office line +15122587357"]);
+  });
+
   it("adds new people", () => {
     const r = mergeFound([], [found({ email: "jane@example.com", emailStatus: "unverified" })]);
     expect(r.inserts).toHaveLength(1);

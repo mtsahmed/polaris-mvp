@@ -17,8 +17,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { modelDisplayName } from "@/lib/ai/models";
 import { ageLabel, bandLabel, bandTone, effectiveStatus, isStale } from "@/lib/intelligence/display";
-import { CRITERIA, isKnown, MAX_RATING } from "@/lib/intelligence/fit";
+import {
+  applicableKnockout,
+  computeFit,
+  criteriaFor,
+  FULL_BAND_KNOWN,
+  isKnown,
+  KNOCKOUT_LABEL,
+  MAX_RATING,
+} from "@/lib/intelligence/fit";
 import { BRIEF_STALE_DAYS, RECOMMENDATION_LABEL, type Brief } from "@/lib/intelligence/types";
+import { DEAL_TYPE_INFO } from "@/lib/pitch-utils";
+import { DEAL_TYPES } from "@/lib/types";
 import { activeProfile } from "@/lib/profile-selection";
 import { cleanHref, hostOf } from "@/lib/rich-text";
 import { requireSession } from "@/lib/session";
@@ -26,7 +36,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { Company, Prospect, Signal } from "@/lib/types";
 import { followProfile } from "../../profile-actions";
-import { decide, pitchFromBrief, researchProspect } from "../actions";
+import { decide, pitchFromBrief, rescoreProspect, researchProspect, setDealGoal } from "../actions";
 
 export const maxDuration = 300;
 
@@ -135,7 +145,9 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
         </Notice>
       )}
 
-      {shownBrief && <BriefBody brief={shownBrief} prospect={prospect} signalById={signalById} />}
+      {shownBrief && (
+        <BriefBody brief={shownBrief} prospect={prospect} signalById={signalById} running={status === "researching"} />
+      )}
 
       {shownBrief && isAdmin && (
         <p className="mt-6 text-[13px] text-muted-foreground/75 italic">
@@ -197,13 +209,13 @@ function BriefBody({
   brief,
   prospect,
   signalById,
+  running,
 }: {
   brief: Brief;
   prospect: Prospect;
   signalById: Map<string, Signal>;
+  running: boolean;
 }) {
-  const unknown = brief.criteria.filter((c) => !isKnown(c)).length;
-  const criteria = CRITERIA.map((def) => ({ def, c: brief.criteria.find((c) => c.key === def.key) }));
   const sources = brief.signal_ids.map((i) => signalById.get(i)).filter((s): s is Signal => Boolean(s));
 
   return (
@@ -220,42 +232,7 @@ function BriefBody({
             </Section>
 
             <Section n={2} title="Fit score">
-              <div className="flex flex-wrap items-baseline gap-3">
-                {brief.fit_score !== null ? (
-                  <>
-                    <span className={cn("font-heading text-5xl font-semibold tabular-nums", bandTone(brief.fit_band))}>
-                      {brief.fit_score}
-                    </span>
-                    <span className={cn("text-lg font-semibold", bandTone(brief.fit_band))}>{bandLabel(brief.fit_band)}</span>
-                  </>
-                ) : (
-                  <span className="text-lg font-semibold text-muted-foreground">Insufficient evidence</span>
-                )}
-                <span className="text-[13px] text-muted-foreground/75 italic">
-                  {unknown === 0 ? "All five criteria have evidence." : `${unknown} of 5 criteria unknown.`}
-                </span>
-              </div>
-              <ul className="divide-y rounded-2xl border">
-                {criteria.map(({ def, c }) => {
-                  const known = c ? isKnown(c) : false;
-                  return (
-                    <li key={def.key} className="grid gap-1 px-4 py-3 sm:grid-cols-[11rem_5rem_minmax(0,1fr)] sm:gap-4">
-                      <div className="font-semibold">{def.label}</div>
-                      <div className={cn("tabular-nums", known ? "font-semibold" : "text-muted-foreground italic")}>
-                        {known ? `${c!.rating} / ${MAX_RATING}` : "Unknown"}
-                      </div>
-                      <div className="space-y-1.5">
-                        <RichText text={cleanLabels(c?.reason ?? "No evidence found")} className="text-[0.9375rem] leading-relaxed" />
-                        {c && <Sources ids={c.signal_ids} signalById={signalById} />}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="text-[13px] text-muted-foreground/75 italic">
-                Each criterion is rated 0–20 from sourced evidence. Unknown counts as 0 and is not a low rating; with three
-                or more unknown, no score is given.
-              </p>
+              <FitScore brief={brief} prospectId={prospect.id} signalById={signalById} running={running} />
             </Section>
 
             <Section n={3} title="Why now">
@@ -398,6 +375,138 @@ function BriefBody({
           </Section>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Score, coverage, deal goal, knockout and the criteria behind it. Briefs made before
+// 16 November 2026 (no deal goal) show the earlier single set and offer a re-score.
+function FitScore({
+  brief,
+  prospectId,
+  signalById,
+  running,
+}: {
+  brief: Brief;
+  prospectId: string;
+  signalById: Map<string, Signal>;
+  running: boolean;
+}) {
+  const goal = brief.deal_goal;
+  const defs = criteriaFor(goal);
+  const rows = defs.map((def) => ({ def, c: brief.criteria.find((c) => c.key === def.key) }));
+  const known = rows.filter(({ c }) => c && isKnown(c)).length;
+  const fit = goal ? computeFit(brief.criteria, defs) : null;
+  const knockout = goal ? applicableKnockout(brief.knockouts, goal) : null;
+
+  return (
+    <div className="space-y-4">
+      {goal ? (
+        <ActionForm action={setDealGoal.bind(null, prospectId, brief.id)} className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Scored as:</span>
+            {DEAL_TYPES.map((t) => (
+              <SubmitButton
+                key={t}
+                name="goal"
+                value={t}
+                size="sm"
+                variant={t === goal ? "gradient-outline" : "ghost"}
+                className={cn(t === goal && "ring-3 ring-brand/30")}
+                pendingLabel="Scoring…"
+                disabled={running}
+              >
+                {t === goal && <Check />}
+                {DEAL_TYPE_INFO[t].label}
+                {t === goal && <span className="sr-only"> (current goal)</span>}
+              </SubmitButton>
+            ))}
+          </div>
+          {brief.deal_goal_suggested && (
+            <p className="text-[13px] text-muted-foreground/75 italic">
+              Polaris suggested {DEAL_TYPE_INFO[brief.deal_goal_suggested].label.toLowerCase()}
+              {brief.deal_goal_reason ? <>: <RichText text={cleanLabels(brief.deal_goal_reason)} /></> : "."} Changing the
+              goal re-scores from the same research, at no cost.
+            </p>
+          )}
+        </ActionForm>
+      ) : (
+        <div className="flex flex-col gap-3 rounded-2xl border border-dashed px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[0.9375rem]">
+            Scored the earlier way: one set of criteria for every company, with Unknown counted as 0. Re-score to score it
+            for a deal goal from the saved findings, with no new web research.
+          </p>
+          {!running && (
+            <ActionForm action={rescoreProspect.bind(null, prospectId)} className="shrink-0">
+              <SubmitButton variant="gradient-outline" size="sm" pendingLabel="Starting…">
+                <RefreshCw /> Re-score
+              </SubmitButton>
+            </ActionForm>
+          )}
+        </div>
+      )}
+
+      {knockout && (
+        <div role="note" className="flex items-start gap-3 rounded-2xl border border-destructive/40 px-4 py-3">
+          <AlertTriangle className="mt-1 size-4 shrink-0 text-destructive" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-semibold">Not a fit: {KNOCKOUT_LABEL[knockout.rule].toLowerCase()}</p>
+            <RichText text={cleanLabels(knockout.reason)} className="block text-[0.9375rem]" />
+            <Sources ids={[knockout.signal_id]} signalById={signalById} />
+            <p className="text-[13px] text-muted-foreground/75 italic">This overrides the score. Set knockouts on the ICP.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-baseline gap-3">
+        {brief.fit_score !== null ? (
+          <>
+            <span className={cn("font-heading text-5xl font-semibold tabular-nums", bandTone(brief.fit_band))}>
+              {brief.fit_score}
+            </span>
+            <span className={cn("text-lg font-semibold", bandTone(brief.fit_band))}>{bandLabel(brief.fit_band)}</span>
+          </>
+        ) : (
+          <span className="text-lg font-semibold text-muted-foreground">Insufficient evidence</span>
+        )}
+        <span className="text-[13px] text-muted-foreground/75 italic">
+          {goal
+            ? `Based on ${known} of ${defs.length} criteria.${fit?.kind === "scored" && fit.capped ? ` Band capped at Possible: fewer than ${FULL_BAND_KNOWN} criteria known.` : ""}`
+            : known === defs.length
+              ? "All five criteria have evidence."
+              : `${defs.length - known} of ${defs.length} criteria unknown.`}
+        </span>
+        {goal && !running && (
+          <ActionForm action={rescoreProspect.bind(null, prospectId)} className="ml-auto">
+            <SubmitButton variant="ghost" size="sm" pendingLabel="Starting…" title="Re-score from the saved findings, with no new web research">
+              <RefreshCw /> Re-score
+            </SubmitButton>
+          </ActionForm>
+        )}
+      </div>
+
+      <ul className="divide-y rounded-2xl border">
+        {rows.map(({ def, c }) => {
+          const isK = c ? isKnown(c) : false;
+          return (
+            <li key={def.key} className="grid gap-1 px-4 py-3 sm:grid-cols-[11rem_5rem_minmax(0,1fr)] sm:gap-4">
+              <div className="font-semibold">{def.label}</div>
+              <div className={cn("tabular-nums", isK ? "font-semibold" : "text-muted-foreground italic")}>
+                {isK ? `${c!.rating} / ${MAX_RATING}` : "Unknown"}
+              </div>
+              <div className="space-y-1.5">
+                <RichText text={cleanLabels(c?.reason ?? "No evidence found")} className="text-[0.9375rem] leading-relaxed" />
+                {c && <Sources ids={c.signal_ids} signalById={signalById} />}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-[13px] text-muted-foreground/75 italic">
+        {goal
+          ? "Each criterion is rated 0, 5, 10, 15 or 20 against written anchors, from sourced evidence. Unknown criteria are left out of the score instead of counting as 0: with fewer than three known there is no score, and with three the band stops at Possible."
+          : "Each criterion is rated 0–20 from sourced evidence. Unknown counts as 0; with three or more unknown, no score is given."}
+      </p>
     </div>
   );
 }
