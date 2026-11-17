@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { computeJourney, type JourneyInput } from "./compute";
 import { MILESTONES } from "./milestones";
-import { nextAction } from "./next";
+import { nextAction, profileTabAction } from "./next";
 
 const base: JourneyInput = {
   profile: { positioning: "x", services: ["x"], audience: "x", objectives: ["x"], voiceSampleCount: 0, sourceCount: 0 },
@@ -33,13 +33,13 @@ describe("nextAction", () => {
     expect(a.href).toBe("/outreach");
   });
 
-  test("the Outreach page's View pipeline links to the board", () => {
-    expect(nextAction("outreach", computeJourney(base), "p1").href).toBe("/pipeline");
+  test("the Outreach page's View dashboard links to the Dashboard", () => {
+    expect(nextAction("outreach", computeJourney(base), "p1").href).toBe("/dashboard");
   });
 
-  test("the Outreach page offers View pipeline", () => {
+  test("the Outreach page offers View dashboard", () => {
     const a = nextAction("outreach", computeJourney(base), "p1");
-    expect(a.label.startsWith("View pipeline")).toBe(true);
+    expect(a.label.startsWith("View dashboard")).toBe(true);
   });
 
   test("an unbuilt milestone is never a link", () => {
@@ -48,5 +48,34 @@ describe("nextAction", () => {
       if (!before) continue;
       expect(nextAction(before.key, computeJourney(base), "p1").href).toBeNull();
     }
+  });
+});
+
+describe("profileTabAction", () => {
+  const incomplete = computeJourney({ ...base, profile: { ...base.profile, positioning: "" } });
+
+  test("steps through the profile tabs in order", () => {
+    expect(profileTabAction("overview", incomplete, "p1")).toMatchObject({
+      label: "Next action (Sources)",
+      href: "/profiles/p1?tab=sources",
+      missing: null,
+      stageLabel: "Profile",
+    });
+    expect(profileTabAction("sources", incomplete, "p1")).toMatchObject({
+      label: "Next action (Insights)",
+      href: "/profiles/p1?tab=insights",
+      missing: null,
+    });
+  });
+
+  test("Insights leads to the ideal customer and needs the required fields", () => {
+    const a = profileTabAction("insights", incomplete, "p1");
+    expect(a.label).toBe("Next action (Ideal customer)");
+    expect(a.href).toBe("/profiles/p1?tab=icp");
+    expect(a.missing).toMatch(/Positioning/i);
+  });
+
+  test("the ICP tab leads to Discover", () => {
+    expect(profileTabAction("icp", computeJourney(base), "p1").label).toBe("Next action (Discover)");
   });
 });

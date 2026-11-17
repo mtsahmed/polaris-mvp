@@ -75,8 +75,8 @@ export const MILESTONES: Milestone[] = [
   },
 ];
 
-// The pipeline view the Outreach page's button leads to (spec section 5).
-export const PIPELINE = { label: "View pipeline", built: true, route: "/pipeline", intro: "See every prospect and what is due next." };
+// The Dashboard (formerly Pipeline) the Outreach page's button leads to (spec section 5).
+export const PIPELINE = { label: "View dashboard", built: true, route: "/dashboard", intro: "See every prospect and what is due next." };
 
 export function milestone(key: MilestoneKey): Milestone {
   return MILESTONES.find((m) => m.key === key)!;

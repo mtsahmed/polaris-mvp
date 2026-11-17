@@ -113,7 +113,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
       {tab === "insights" && <InsightsTab profile={profile} sourceCount={sources?.length ?? 0} />}
       {tab === "icp" && <IcpTab profile={profile} icps={icps ?? []} />}
 
-      <NextAction current={tab === "icp" ? "icp" : "profile"} profileId={profile.id} />
+      <NextAction current={tab === "icp" ? "icp" : "profile"} profileId={profile.id} profileTab={tab} />
     </div>
   );
 }

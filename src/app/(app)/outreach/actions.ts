@@ -10,7 +10,7 @@ import type { Contact, OutreachEventType, Pitch, PipelineStage, Prospect } from 
 
 function revalidate(prospectId?: string) {
   revalidatePath("/outreach");
-  revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
   revalidatePath("/contacts");
   if (prospectId) revalidatePath(`/pitch/${prospectId}`);
 }
@@ -139,7 +139,7 @@ export async function completeTask(taskId: string) {
   revalidate();
 }
 
-// Moving a card on the pipeline board, including Won and Lost. A manual move may go backward.
+// Moving a company on the Dashboard stage list, including Won and Lost. A manual move may go backward.
 export async function setStage(prospectId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireSession();
   const stage = String(formData.get("stage") ?? "") as PipelineStage;

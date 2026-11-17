@@ -25,3 +25,34 @@ export function nextAction(current: MilestoneKey, statuses: MilestoneStatus[], p
 }
 
 
+
+// Inside a profile the Next action button steps through the tabs in order (owner review,
+// 17 Nov 2026): Profile → Sources → Insights → Ideal customer → Discover. Sources are optional, so
+// the first two steps never block; Insights leads to the ideal customer and needs the profile's
+// required fields, like the Profile milestone.
+export const PROFILE_TAB_STEPS = [
+  { key: "overview", label: "Profile", intro: "" },
+  { key: "sources", label: "Sources", intro: "Add the website, documents or links Polaris should learn from." },
+  { key: "insights", label: "Insights", intro: "Let Polaris draft the profile details from your sources, then check them." },
+  { key: "icp", label: "Ideal customer", intro: "" },
+] as const;
+export type ProfileTabKey = (typeof PROFILE_TAB_STEPS)[number]["key"];
+
+export function profileTabAction(
+  tab: ProfileTabKey,
+  statuses: MilestoneStatus[],
+  profileId: string,
+): NextActionModel & { stageLabel: string } {
+  const i = PROFILE_TAB_STEPS.findIndex((t) => t.key === tab);
+  const stageLabel = PROFILE_TAB_STEPS[i].label;
+  if (tab === "icp") return { ...nextAction("icp", statuses, profileId), stageLabel };
+  if (tab === "insights") return { ...nextAction("profile", statuses, profileId), stageLabel };
+  const next = PROFILE_TAB_STEPS[i + 1];
+  return {
+    intro: next.intro,
+    label: `Next action (${next.label})`,
+    href: `/profiles/${profileId}?tab=${next.key}`,
+    missing: null,
+    stageLabel,
+  };
+}

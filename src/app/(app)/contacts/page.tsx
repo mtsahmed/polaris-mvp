@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Info, Loader2, MailCheck, RefreshCw, Save, Search, Telescope, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, ChevronDown, Info, Loader2, MailCheck, RefreshCw, Save, Search, Telescope, Trash2, UserPlus, Users } from "lucide-react";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ConfirmSubmit } from "@/components/confirm-submit";
@@ -43,7 +43,8 @@ function mapsHref(name: string, location: string | null | undefined) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([name, location].filter(Boolean).join(" "))}`;
 }
 
-export default async function ContactsPage() {
+export default async function ContactsPage(props: PageProps<"/contacts">) {
+  const { company } = await props.searchParams;
   const { active } = await activeProfile();
   if (!active) {
     return (
@@ -105,6 +106,136 @@ export default async function ContactsPage() {
   const jobOf = new Map<string, JobRow>();
   for (const j of jobsRes.data ?? []) if (!jobOf.has(j.prospect_id)) jobOf.set(j.prospect_id, j);
   const anyRunning = [...jobOf.values()].some((j) => isActive(j));
+  // One company at a time (owner review, 17 Nov 2026): the one chosen with ?company= (the brief's
+  // Next action), else the most recently pursued; the rest sit in a collapsed Other contacts block.
+  const focus = prospects.find((p) => p.id === company) ?? prospects[0] ?? null;
+  const others = prospects.filter((p) => p !== focus);
+
+  const renderCompany = (p: Row, nested = false) => {
+    const contacts = (contactsRes.data ?? []).filter((c) => c.company_id === p.company_id);
+    const roles = rolesOf.get(p.id) ?? [];
+    const job = jobOf.get(p.id) ?? null;
+    return (
+      <Card key={p.id} className={nested ? "shadow-none ring-0" : undefined}>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle icon={Users}>{p.companies?.name ?? "Company"}</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{STAGE_LABEL[p.stage]}</Badge>
+              <Link href={`/intelligence/${p.id}`} className="text-sm font-medium text-brand hover:underline">
+                Brief
+              </Link>
+              <Link href={`/pitch/${p.id}`} className="text-sm font-medium text-brand hover:underline">
+                Pitch
+              </Link>
+              <a
+                href={mapsHref(p.companies?.name ?? "", p.companies?.location)}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-sm font-medium text-brand hover:underline"
+              >
+                Google Maps
+              </a>
+            </div>
+          </div>
+          {roles.length > 0 && (
+            <CardDescription className="text-[0.9375rem]">
+              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Roles to approach: </span>
+              {roles.map((r) => r.role).join(" · ")}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <JobStatus prospectId={p.id} job={job} hasContacts={contacts.length > 0} unconfirmed={contacts.filter((c) => c.email && c.email_unconfirmed).length} />
+          {contacts.length > 0 ? (
+            <ContactsTable contacts={contacts} />
+          ) : (
+            <p className="text-[0.9375rem] text-muted-foreground">No contacts yet.</p>
+          )}
+
+          <div className="space-y-2">
+            <div className="text-sm font-semibold">Find people in Apollo</div>
+            <ApolloFinder prospectId={p.id} connected={connected} />
+          </div>
+
+          <details className="rounded-2xl border p-4">
+            <summary className="flex cursor-pointer items-center gap-2 font-semibold">
+              <UserPlus className="size-4 text-brand" /> Add details you found yourself (Google Maps, LinkedIn…)
+            </summary>
+            <ActionForm action={addContact.bind(null, p.id)} resetOnSuccess className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Field id={`name-${p.id}`} label="Name">
+                <Input id={`name-${p.id}`} name="name" required />
+              </Field>
+              <Field id={`title-${p.id}`} label="Job title">
+                <Input id={`title-${p.id}`} name="title" />
+              </Field>
+              <Field id={`email-${p.id}`} label="Work email" hint="Saved as unverified: Polaris has not checked it.">
+                <Input id={`email-${p.id}`} name="email" type="email" />
+              </Field>
+              <Field id={`phone-${p.id}`} label="Office or main line">
+                <Input id={`phone-${p.id}`} name="phone" />
+              </Field>
+              <Field id={`mobile-${p.id}`} label="Mobile">
+                <Input id={`mobile-${p.id}`} name="mobile" />
+              </Field>
+              <Field id={`whatsapp-${p.id}`} label="WhatsApp">
+                <Input id={`whatsapp-${p.id}`} name="whatsapp" />
+              </Field>
+              <Field id={`found-${p.id}`} label="Where you found them">
+                <select
+                  id={`found-${p.id}`}
+                  name="found_at"
+                  defaultValue="Google Maps"
+                  className="h-9 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
+                >
+                  {FOUND_AT.map((f) => (
+                    <option key={f}>{f}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field id={`other-${p.id}`} label="If Other, where" hint="For example: a conference speaker list.">
+                <Input id={`other-${p.id}`} name="found_at_other" />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field id={`url-${p.id}`} label="Page link (optional)" hint="The page the details are on, such as the Google Maps listing.">
+                  <Input id={`url-${p.id}`} name="source_url" type="url" placeholder="https://" />
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton variant="gradient-outline">
+                  <UserPlus /> Save contact
+                </SubmitButton>
+              </div>
+            </ActionForm>
+          </details>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // A company in Other contacts: one row (name, stage, contact count); the arrow opens its card.
+  const renderCollapsed = (p: Row) => {
+    const count = (contactsRes.data ?? []).filter((c) => c.company_id === p.company_id).length;
+    return (
+      <details key={p.id} className="group/company rounded-2xl border bg-card shadow-sm">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5 [&::-webkit-details-marker]:hidden">
+          <Users className="size-5 text-brand" aria-hidden="true" />
+          <span className="font-heading text-base font-semibold tracking-tight">{p.companies?.name ?? "Company"}</span>
+          <Badge variant="outline">{STAGE_LABEL[p.stage]}</Badge>
+          <span className="text-[13px] text-muted-foreground/75 italic">
+            {count} {count === 1 ? "contact" : "contacts"}
+          </span>
+          <ChevronDown
+            className="ml-auto size-5 text-muted-foreground transition-transform group-open/company:rotate-180"
+            aria-hidden="true"
+          />
+          <span className="sr-only">Show contacts</span>
+        </summary>
+        <div className="border-t">{renderCompany(p, true)}</div>
+      </details>
+    );
+  };
+
   const waiting = prospects.filter((p) => !(contactsRes.data ?? []).some((c) => c.company_id === p.company_id) && !isActive(jobOf.get(p.id))).length;
 
   return (
@@ -146,107 +277,20 @@ export default async function ContactsPage() {
         </Card>
       ) : (
         <div className="space-y-8">
-          {prospects.map((p) => {
-            const contacts = (contactsRes.data ?? []).filter((c) => c.company_id === p.company_id);
-            const roles = rolesOf.get(p.id) ?? [];
-            const job = jobOf.get(p.id) ?? null;
-            return (
-              <Card key={p.id}>
-                <CardHeader>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <CardTitle icon={Users}>{p.companies?.name ?? "Company"}</CardTitle>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">{STAGE_LABEL[p.stage]}</Badge>
-                      <Link href={`/intelligence/${p.id}`} className="text-sm font-medium text-brand hover:underline">
-                        Brief
-                      </Link>
-                      <Link href={`/pitch/${p.id}`} className="text-sm font-medium text-brand hover:underline">
-                        Pitch
-                      </Link>
-                      <a
-                        href={mapsHref(p.companies?.name ?? "", p.companies?.location)}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="text-sm font-medium text-brand hover:underline"
-                      >
-                        Google Maps
-                      </a>
-                    </div>
-                  </div>
-                  {roles.length > 0 && (
-                    <CardDescription className="text-[0.9375rem]">
-                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Roles to approach: </span>
-                      {roles.map((r) => r.role).join(" · ")}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <JobStatus prospectId={p.id} job={job} hasContacts={contacts.length > 0} unconfirmed={contacts.filter((c) => c.email && c.email_unconfirmed).length} />
-                  {contacts.length > 0 ? (
-                    <ContactsTable contacts={contacts} />
-                  ) : (
-                    <p className="text-[0.9375rem] text-muted-foreground">No contacts yet.</p>
-                  )}
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-semibold">Find people in Apollo</div>
-                    <ApolloFinder prospectId={p.id} connected={connected} />
-                  </div>
-
-                  <details className="rounded-2xl border p-4">
-                    <summary className="flex cursor-pointer items-center gap-2 font-semibold">
-                      <UserPlus className="size-4 text-brand" /> Add details you found yourself (Google Maps, LinkedIn…)
-                    </summary>
-                    <ActionForm action={addContact.bind(null, p.id)} resetOnSuccess className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <Field id={`name-${p.id}`} label="Name">
-                        <Input id={`name-${p.id}`} name="name" required />
-                      </Field>
-                      <Field id={`title-${p.id}`} label="Job title">
-                        <Input id={`title-${p.id}`} name="title" />
-                      </Field>
-                      <Field id={`email-${p.id}`} label="Work email" hint="Saved as unverified: Polaris has not checked it.">
-                        <Input id={`email-${p.id}`} name="email" type="email" />
-                      </Field>
-                      <Field id={`phone-${p.id}`} label="Office or main line">
-                        <Input id={`phone-${p.id}`} name="phone" />
-                      </Field>
-                      <Field id={`mobile-${p.id}`} label="Mobile">
-                        <Input id={`mobile-${p.id}`} name="mobile" />
-                      </Field>
-                      <Field id={`whatsapp-${p.id}`} label="WhatsApp">
-                        <Input id={`whatsapp-${p.id}`} name="whatsapp" />
-                      </Field>
-                      <Field id={`found-${p.id}`} label="Where you found them">
-                        <select
-                          id={`found-${p.id}`}
-                          name="found_at"
-                          defaultValue="Google Maps"
-                          className="h-9 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
-                        >
-                          {FOUND_AT.map((f) => (
-                            <option key={f}>{f}</option>
-                          ))}
-                        </select>
-                      </Field>
-                      <Field id={`other-${p.id}`} label="If Other, where" hint="For example: a conference speaker list.">
-                        <Input id={`other-${p.id}`} name="found_at_other" />
-                      </Field>
-                      <div className="sm:col-span-2">
-                        <Field id={`url-${p.id}`} label="Page link (optional)" hint="The page the details are on, such as the Google Maps listing.">
-                          <Input id={`url-${p.id}`} name="source_url" type="url" placeholder="https://" />
-                        </Field>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <SubmitButton variant="gradient-outline">
-                          <UserPlus /> Save contact
-                        </SubmitButton>
-                      </div>
-                    </ActionForm>
-                  </details>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {focus && renderCompany(focus)}
+          {others.length > 0 && (
+            <details className="group rounded-3xl border border-dashed p-5">
+              <summary className="flex cursor-pointer list-none items-start gap-3 [&::-webkit-details-marker]:hidden">
+                <span className="space-y-0.5">
+                  <span className="block text-lg font-semibold tracking-tight">Other contacts ({others.length})</span>
+                  <span className="block text-[13px] text-muted-foreground/75 italic">Contacts of previously contacted companies</span>
+                </span>
+                <ChevronDown className="mt-1 ml-auto size-5 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+                <span className="sr-only">Show other companies</span>
+              </summary>
+              <div className="mt-5 space-y-3">{others.map(renderCollapsed)}</div>
+            </details>
+          )}
         </div>
       )}
       <NextAction current="contacts" />

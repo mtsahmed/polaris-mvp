@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Compass, Info, Plus, Target, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, Compass, Info, Plus, Target, Undo2, X } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, NativeSelect } from "@/components/field";
 import { NextAction } from "@/components/next-action";
@@ -21,7 +21,9 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { Company, Icp, Prospect, Signal } from "@/lib/types";
 import { followProfile } from "../profile-actions";
-import { dismissSuggestion, runDiscovery, shortlistSuggestion } from "./actions";
+import { unshortlistBlocker } from "@/lib/discovery/unshortlist";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { dismissSuggestion, runDiscovery, shortlistSuggestion, unshortlistProspect } from "./actions";
 
 export const metadata: Metadata = { title: "Discovery" };
 // A discovery run searches the web several times; allow up to five minutes.
@@ -35,6 +37,11 @@ function formatDate(value: string) {
 }
 
 type Row = Prospect & { companies: Company | null };
+
+// Owner review (17 Nov 2026): the top blocks stay short and scroll inside, so the page does not.
+// No overscroll-contain: when a block reaches its end, the wheel carries on scrolling the page.
+const SHORT_CARD = "lg:max-h-[30rem]";
+const SCROLL_INSIDE = "min-h-0 overflow-y-auto py-1";
 
 export default async function DiscoveryPage(props: PageProps<"/discovery">) {
   await requireSession();
@@ -100,6 +107,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
 
   const suggested = (rows ?? []).filter((r) => r.status === "suggested");
   const added = (rows ?? []).filter((r) => r.status === "saved");
+  const blockers = new Map(await Promise.all(added.map(async (r) => [r.id, await unshortlistBlocker(supabase, r)] as const)));
   const found = typeof sp.found === "string" ? Number(sp.found) : null;
   const dropped = typeof sp.dropped === "string" ? Number(sp.dropped) : 0;
 
@@ -113,14 +121,14 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Card>
+        <Card className={SHORT_CARD}>
           <CardHeader>
             <CardTitle icon={Compass}>Find companies</CardTitle>
             <CardDescription className="text-base">
               A run takes two to four minutes and is logged in Usage &amp; cost.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className={SCROLL_INSIDE}>
             <ActionForm action={runDiscovery} className="space-y-5">
               <Field id="profile_id" label="Find companies for:" hint="The search uses this profile and its ICP.">
                 <NativeSelect id="profile_id" name="profile_id" defaultValue={profileId}>
@@ -160,7 +168,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={SHORT_CARD}>
           <CardHeader>
             <CardTitle icon={Target}>What the search uses</CardTitle>
             <CardDescription className="text-base">
@@ -169,7 +177,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
                 : "This profile has no ICP yet."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 text-base">
+          <CardContent className={cn("space-y-4 text-base", SCROLL_INSIDE)}>
             {icp ? (
               <>
                 <IcpLine label="Industries" items={icp.industries} />
@@ -234,7 +242,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
             Run a search above. Suggested companies appear here for you to shortlist or dismiss.
           </p>
         ) : (
-          <div className={cn("grid gap-5", suggested.length > 1 && "lg:grid-cols-2")}>
+          <div className={cn("grid max-h-[44rem] gap-5 overflow-y-auto rounded-3xl p-1 pr-2", suggested.length > 1 && "lg:grid-cols-2")}>
             {suggested.map((r) => (
               <Suggestion key={r.id} row={r} signals={signalsOf(r.company_id)} />
             ))}
@@ -244,9 +252,9 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
         {added.length > 0 && (
           <div className="space-y-4 pt-6">
             <h3 className="text-xl font-semibold tracking-tight">Shortlisted</h3>
-            <div className={cn("grid gap-5", added.length > 1 && "lg:grid-cols-2")}>
+            <div className="space-y-3">
               {added.map((r) => (
-                <Suggestion key={r.id} row={r} signals={signalsOf(r.company_id)} />
+                <Shortlisted key={r.id} row={r} signals={signalsOf(r.company_id)} blocker={blockers.get(r.id) ?? null} />
               ))}
             </div>
           </div>
@@ -268,7 +276,53 @@ function IcpLine({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-function Suggestion({ row, signals }: { row: Row; signals: Signal[] }) {
+// A shortlisted company, collapsed to one line (owner review, 17 Nov 2026). The arrow opens the
+// suggestion card; the undo icon moves it back to Suggestions unless it already has outreach history.
+function Shortlisted({ row, signals, blocker }: { row: Row; signals: Signal[]; blocker: string | null }) {
+  const company = row.companies;
+  if (!company) return null;
+  return (
+    <details className="group rounded-3xl border border-success/40 bg-card shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-2 px-6 py-4 [&::-webkit-details-marker]:hidden">
+        <CheckCircle2 className="size-5 text-success" aria-hidden="true" />
+        <span className="font-heading text-lg font-semibold tracking-tight">{company.name}</span>
+        {company.industry && <Badge variant="secondary">{company.industry}</Badge>}
+        {blocker ? (
+          <span title={blocker} className="inline-flex cursor-help text-muted-foreground/50">
+            <Undo2 className="size-4" aria-hidden="true" />
+            <span className="sr-only">{blocker}</span>
+          </span>
+        ) : (
+          <ConfirmSubmit
+            action={unshortlistProspect.bind(null, row.id)}
+            label={
+              <>
+                <Undo2 />
+                <span className="sr-only">Back to suggestions</span>
+              </>
+            }
+            title="Back to suggestions"
+            confirmLabel="Move back"
+            pendingLabel="Moving…"
+            size="xs"
+          />
+        )}
+        <span className="ml-auto flex items-center gap-3">
+          <Link href={`/intelligence/${row.id}`} className="text-sm font-medium text-brand hover:underline">
+            Open brief
+          </Link>
+          <ChevronDown className="size-5 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+          <span className="sr-only">Show details</span>
+        </span>
+      </summary>
+      <div className="border-t p-1">
+        <Suggestion row={row} signals={signals} bare />
+      </div>
+    </details>
+  );
+}
+
+function Suggestion({ row, signals, bare = false }: { row: Row; signals: Signal[]; bare?: boolean }) {
   const company = row.companies;
   if (!company) return null;
   const website = company.website ?? (company.domain ? `https://${company.domain}` : null);
@@ -279,12 +333,12 @@ function Suggestion({ row, signals }: { row: Row; signals: Signal[] }) {
   return (
     <article
       className={cn(
-        "flex flex-col gap-5 rounded-3xl border bg-card p-6 shadow-sm",
-        row.status === "saved" && "border-success/40",
+        "flex flex-col gap-5 rounded-3xl bg-card p-6",
+        bare ? "border-0" : "border shadow-sm",
       )}
     >
       <header className="space-y-2">
-        <h3 className="font-heading text-2xl font-semibold tracking-tight">{company.name}</h3>
+        {!bare && <h3 className="font-heading text-2xl font-semibold tracking-tight">{company.name}</h3>}
         <div className="flex flex-wrap items-center gap-2">
           {website && <SourceChip href={website} host={company.domain ?? hostOf(website)} />}
           {company.industry && <Badge variant="secondary">{company.industry}</Badge>}

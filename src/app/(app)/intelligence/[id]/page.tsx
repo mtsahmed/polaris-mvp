@@ -159,7 +159,11 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
         </p>
       )}
 
-      <NextAction current="intelligence" profileId={profile.id} />
+      <NextAction
+        current="intelligence"
+        profileId={profile.id}
+        href={prospect.decision === "pursue" ? `/contacts?company=${prospect.id}` : undefined}
+      />
     </div>
   );
 }

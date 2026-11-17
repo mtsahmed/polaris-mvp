@@ -22,6 +22,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-brand-sans);
   --color-gold: var(--gold);
+  --color-stage-blue: var(--stage-blue);
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
   --color-success: var(--success);
@@ -95,6 +96,8 @@
   --brand-gradient-button: linear-gradient(90deg, #cd2680 0%, #ff8e5a 58%, #ffdd26 100%);
   --gold: oklch(0.89 0.18 95);
   --success: oklch(0.5 0.13 155);
+  /* Dashboard stage headings and their rule (owner's choice; 3.8:1 on white). */
+  --stage-blue: #527af8;
   --warning: oklch(0.6 0.14 65);
   --chart-1: oklch(0.5 0.21 355);
   --chart-2: oklch(0.72 0.17 45);
@@ -139,6 +142,8 @@
   --brand-gradient-button: linear-gradient(90deg, #cd2680 0%, #ff8e5a 58%, #ffdd26 100%);
   --gold: oklch(0.89 0.18 95);
   --success: oklch(0.74 0.15 155);
+  /* The same blue; it also reads on dark cards (about 4.6:1). */
+  --stage-blue: #527af8;
   --warning: oklch(0.8 0.13 70);
   --chart-1: oklch(0.89 0.18 95);
   --chart-2: oklch(0.72 0.17 45);

@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { brand } from "@/config/brand";
 import { createClient } from "@/lib/supabase/server";
 import { LandingShell } from "./landing-shell";
@@ -16,14 +15,14 @@ const POINTS = [
 ];
 
 // Public landing page: what Polaris is, then the animated route map (public/how-it-works.html).
-// Signed-in users go straight to their profiles.
+// Signed-in users can open it from the logo; its header button then leads back into the app.
 export default async function Home() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  if (data?.claims?.sub) redirect("/profiles");
+  const signedIn = Boolean(data?.claims?.sub);
 
   return (
-    <LandingShell>
+    <LandingShell signedIn={signedIn}>
       <section className="relative px-5 pb-6 pt-12 sm:px-8 lg:pt-16">
         <div className="relative mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <div className="space-y-6">

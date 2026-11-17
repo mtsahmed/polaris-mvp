@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 function revalidate() {
   revalidatePath("/contacts");
   revalidatePath("/outreach");
-  revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
 }
 
 export type FindResult = { ok: true; candidates: ApolloCandidate[]; byTitle: boolean } | { ok: false; error: string };

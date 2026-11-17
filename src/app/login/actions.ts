@@ -30,8 +30,8 @@ const newAccount = z
   .refine((v) => v.password === v.confirm, { message: "The two passwords do not match.", path: ["confirm"] });
 
 function safeNext(value: FormDataEntryValue | null) {
-  const next = typeof value === "string" ? value : "/";
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const next = typeof value === "string" ? value : "/profiles";
+  return next.startsWith("/") && !next.startsWith("//") ? next : "/profiles";
 }
 
 function confirmRedirect() {

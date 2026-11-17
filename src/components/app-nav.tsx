@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Contact, Kanban, PenLine, Receipt, Route, Send, Telescope, UserRound } from "lucide-react";
+import { Compass, Contact, LayoutDashboard, PenLine, Receipt, Route, Send, Telescope, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean; when?: string }[] = [
@@ -12,10 +12,36 @@ const NAV: { href: string; label: string; icon: typeof UserRound; ready: boolean
   { href: "/contacts", label: "Contacts", icon: Contact, ready: true },
   { href: "/pitch", label: "Pitch studio", icon: PenLine, ready: true },
   { href: "/outreach", label: "Outreach", icon: Send, ready: true },
-  { href: "/pipeline", label: "Pipeline", icon: Kanban, ready: true },
   { href: "/usage", label: "Usage & cost", icon: Receipt, ready: true },
   { href: "/how-it-works", label: "How it works", icon: Route, ready: true },
 ];
+
+// Dashboard sits on its own just below the Workspace box (owner review, 17 Nov 2026).
+export function DashboardNav() {
+  const pathname = usePathname();
+  return (
+    <nav aria-label="Dashboard">
+      <NavLink href="/dashboard" label="Dashboard" Icon={LayoutDashboard} active={pathname.startsWith("/dashboard")} />
+    </nav>
+  );
+}
+
+function NavLink({ href, label, Icon, active }: { href: string; label: string; Icon: typeof UserRound; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-full px-4 py-2.5 text-base font-medium transition-colors",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+      )}
+    >
+      <Icon className={cn("size-[18px]", active && "text-sidebar-primary")} />
+      {label}
+    </Link>
+  );
+}
 
 export function AppNav() {
   const pathname = usePathname();
@@ -37,21 +63,7 @@ export function AppNav() {
             </div>
           );
         }
-        return (
-          <Link
-            key={label}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 rounded-full px-4 py-2.5 text-base font-medium transition-colors",
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-            )}
-          >
-            <Icon className={cn("size-[18px]", active && "text-sidebar-primary")} />
-            {label}
-          </Link>
-        );
+        return <NavLink key={label} href={href} label={label} Icon={Icon} active={active} />;
       })}
     </nav>
   );

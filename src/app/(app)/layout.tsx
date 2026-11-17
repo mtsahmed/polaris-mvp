@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LogOut, Settings } from "lucide-react";
-import { AppNav } from "@/components/app-nav";
+import { AppNav, DashboardNav } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
 import { Journey } from "@/components/journey";
 import { ModelPicker } from "@/components/model-picker";
@@ -24,7 +24,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <div className="flex min-h-dvh flex-col md:flex-row">
       <aside className="relative flex shrink-0 flex-col gap-8 overflow-x-hidden overflow-y-auto border-r border-sidebar-border bg-sidebar px-5 py-7 text-sidebar-foreground md:sticky md:top-0 md:h-dvh md:w-72">
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-24 size-80 rounded-full opacity-20 blur-3xl bg-brand-gradient" />
-        <BrandMark className="relative px-2" />
+        <Link
+          href="/"
+          title="Polaris home page"
+          className="relative rounded-xl px-2 py-1 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <BrandMark />
+        </Link>
 
         <div className="relative rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-4 py-3">
           <div className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-gold">Workspace</div>
@@ -54,6 +60,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           >
             <Settings className="size-4" /> Workspace settings
           </Link>
+        </div>
+
+        <div className="relative -mt-4">
+          <DashboardNav />
         </div>
 
         {active && profiles.length > 1 && (

@@ -16,7 +16,7 @@ export async function generateMetadata(props: PageProps<"/login">): Promise<Meta
 // One compact card: email, password, and both actions. The landing page (/) carries the pitch.
 export default async function LoginPage(props: PageProps<"/login">) {
   const { next, error, mode } = await props.searchParams;
-  const nextPath = typeof next === "string" ? next : "/";
+  const nextPath = typeof next === "string" ? next : "/profiles";
   const signup = mode === "signup";
   const forgot = mode === "forgot";
   const copy = signup

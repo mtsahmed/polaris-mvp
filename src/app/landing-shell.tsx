@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LogIn, Moon, Sun } from "lucide-react";
+import { ArrowRight, LogIn, Moon, Sun } from "lucide-react";
 import { BrandMark, StarIcon } from "@/components/brand-mark";
 import { HowItWorksEmbed } from "@/components/how-it-works-embed";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,7 +14,7 @@ type LandingTheme = "dark" | "light";
 
 // Landing page frame: header with the background toggle and Sign in, the hero (children), then the
 // route map. Dark is the default; the visitor's choice is kept in this browser only.
-export function LandingShell({ children }: { children: ReactNode }) {
+export function LandingShell({ children, signedIn = false }: { children: ReactNode; signedIn?: boolean }) {
   const [theme, setTheme] = useState<LandingTheme>("dark");
 
   useEffect(() => {
@@ -69,9 +69,15 @@ export function LandingShell({ children }: { children: ReactNode }) {
           >
             {light ? <Moon className="size-[18px]" /> : <Sun className="size-[18px]" />}
           </button>
-          <Link href="/login" className={buttonVariants({ variant: "brand" })}>
-            <LogIn /> Sign in
-          </Link>
+          {signedIn ? (
+            <Link href="/profiles" className={buttonVariants({ variant: "brand" })}>
+              Open Polaris <ArrowRight />
+            </Link>
+          ) : (
+            <Link href="/login" className={buttonVariants({ variant: "brand" })}>
+              <LogIn /> Sign in
+            </Link>
+          )}
         </div>
       </header>
 

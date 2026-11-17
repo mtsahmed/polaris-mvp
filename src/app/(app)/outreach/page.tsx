@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Check, MessageCircle, PenLine, Phone, Send } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, ChevronDown, MessageCircle, PenLine, Phone, Reply, Send } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, NativeSelect } from "@/components/field";
 import { NextAction } from "@/components/next-action";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { allowedChannels, EVENT_LABEL, telHref, whatsappHref } from "@/lib/outreach/rules";
+import { STAGE_LABEL } from "@/lib/pitch-utils";
 import { activeProfile } from "@/lib/profile-selection";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -115,17 +116,31 @@ export default async function OutreachPage() {
             const followUp = pitches.find((x) => x.prospect_id === p.id && x.kind === "follow_up") ?? null;
             const replied = events.some((e) => e.type === "reply" || e.type === "meeting");
             const nameOf = (id: string | null) => contacts.find((c) => c.id === id)?.name ?? "a removed contact";
+            const next = nextStep({ firstSent: first.status === "sent", followUp, replied, task: tasks[0] ?? null, today });
 
+            // Collapsed by default (owner review, 17 Nov 2026): one line with the stage and the next
+            // step; the arrow opens the full card.
             return (
-              <Card key={p.id}>
+              <Card key={p.id} className="py-0">
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-(--card-spacing) py-4 [&::-webkit-details-marker]:hidden">
+                    <Send className="size-5 text-brand" aria-hidden="true" />
+                    <span className="font-heading text-lg font-semibold tracking-tight">{p.companies?.name ?? "Company"}</span>
+                    <Badge variant="outline">{STAGE_LABEL[p.stage]}</Badge>
+                    <span className={cn("text-[13px] italic", next.urgent ? "font-medium text-destructive" : "text-muted-foreground/75")}>
+                      {next.text}
+                    </span>
+                    <ChevronDown className="ml-auto size-5 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+                    <span className="sr-only">Show details</span>
+                  </summary>
+                  <div className="space-y-6 border-t pt-6 pb-(--card-spacing)">
                 <CardHeader>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <CardTitle icon={Send}>{p.companies?.name ?? "Company"}</CardTitle>
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <div className="flex flex-wrap gap-3 text-sm font-medium">
                       <Link href={`/pitch/${p.id}`} className="text-brand hover:underline">
                         Pitch
                       </Link>
-                      <Link href="/contacts" className="text-brand hover:underline">
+                      <Link href={`/contacts?company=${p.id}`} className="text-brand hover:underline">
                         Contacts
                       </Link>
                     </div>
@@ -187,10 +202,30 @@ export default async function OutreachPage() {
                     ) : null}
                   </div>
 
+                  {first.status === "sent" && !replied && (
+                    <ActionForm
+                      action={logEvent.bind(null, p.id)}
+                      resetOnSuccess
+                      className="flex flex-wrap items-end gap-3 rounded-2xl border border-brand/30 bg-brand/5 p-4"
+                    >
+                      <input type="hidden" name="type" value="reply" />
+                      <input type="hidden" name="contact_id" value={first.contact_id ?? ""} />
+                      <input type="hidden" name="date" value={today} />
+                      <div className="min-w-60 flex-1">
+                        <Field id={`reply-note-${p.id}`} label="Did they reply?" hint="Moves the company to Replied and clears the follow-up reminder.">
+                          <Input id={`reply-note-${p.id}`} name="note" autoComplete="off" placeholder="What they said (optional)" />
+                        </Field>
+                      </div>
+                      <SubmitButton variant="gradient-outline" pendingLabel="Saving…">
+                        <Reply /> Mark as replied
+                      </SubmitButton>
+                    </ActionForm>
+                  )}
+
                   <FollowUpChannels contacts={contacts} emailSent={first.status === "sent"} replied={replied} />
 
                   <details className="rounded-2xl border p-4">
-                    <summary className="cursor-pointer font-semibold">Log a reply, call or meeting</summary>
+                    <summary className="cursor-pointer font-semibold">Log a call, meeting or other update</summary>
                     <ActionForm action={logEvent.bind(null, p.id)} resetOnSuccess className="mt-4 grid gap-4 sm:grid-cols-3">
                       <Field id={`type-${p.id}`} label="What happened">
                         <NativeSelect id={`type-${p.id}`} name="type" defaultValue="reply">
@@ -244,6 +279,8 @@ export default async function OutreachPage() {
                     )}
                   </div>
                 </CardContent>
+                  </div>
+                </details>
               </Card>
             );
           })}
@@ -252,6 +289,30 @@ export default async function OutreachPage() {
       <NextAction current="outreach" />
     </div>
   );
+}
+
+// The one line shown on a collapsed company row: what to do next, or what is due.
+function nextStep({
+  firstSent,
+  followUp,
+  replied,
+  task,
+  today,
+}: {
+  firstSent: boolean;
+  followUp: Pitch | null;
+  replied: boolean;
+  task: Task | null;
+  today: string;
+}): { text: string; urgent: boolean } {
+  if (replied) return { text: "Reply logged", urgent: false };
+  if (!firstSent) return { text: "Send the first email, then mark it as sent", urgent: false };
+  if (task?.due_date) {
+    const overdue = task.due_date < today;
+    return { text: `${task.title}: ${overdue ? "overdue since" : "due"} ${day(task.due_date)}`, urgent: overdue };
+  }
+  if (followUp && followUp.status !== "sent") return { text: "Send the follow-up if there is no reply", urgent: false };
+  return { text: "Waiting for a reply", urgent: false };
 }
 
 function EmailBlock({
