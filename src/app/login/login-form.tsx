@@ -1,34 +1,31 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
+import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn, signUp, type AuthState } from "./actions";
+import { PasswordInput } from "@/components/password-input";
+import { signIn, type AuthState } from "./actions";
 
+// Sign in with email and password. Create account opens the separate sign-up form.
 export function LoginForm({ next }: { next: string }) {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [signInState, signInAction, signingIn] = useActionState<AuthState, FormData>(signIn, {});
-  const [signUpState, signUpAction, signingUp] = useActionState<AuthState, FormData>(signUp, {});
-
-  const state = mode === "signin" ? signInState : signUpState;
-  const pending = signingIn || signingUp;
+  const [state, action, pending] = useActionState<AuthState, FormData>(signIn, {});
 
   return (
-    <form action={mode === "signin" ? signInAction : signUpAction} className="space-y-5">
+    <form action={action} className="space-y-5">
       <input type="hidden" name="next" value={next} />
       <div className="space-y-2">
-        <Label htmlFor="email">Work email</Label>
+        <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" autoComplete="email" required className="h-10" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
+          autoComplete="current-password"
           minLength={8}
           required
           className="h-10"
@@ -40,26 +37,15 @@ export function LoginForm({ next }: { next: string }) {
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
-      {state.message && (
-        <Alert>
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      )}
 
-      <Button type="submit" variant="brand" size="lg" className="w-full" disabled={pending}>
-        {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        {mode === "signin" ? "New to Polaris?" : "Already have an account?"}{" "}
-        <button
-          type="button"
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-        >
-          {mode === "signin" ? "Create an account" : "Sign in"}
-        </button>
-      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Button type="submit" variant="brand" size="lg" disabled={pending}>
+          {pending ? "Signing in…" : "Sign in"}
+        </Button>
+        <Link href="/login?mode=signup" className={buttonVariants({ variant: "gradient-outline", size: "lg" })}>
+          Create account
+        </Link>
+      </div>
     </form>
   );
 }

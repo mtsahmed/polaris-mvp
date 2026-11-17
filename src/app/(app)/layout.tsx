@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
 import { Journey } from "@/components/journey";
@@ -47,6 +48,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           ) : (
             <div className="mt-1 truncate text-base font-semibold">{session.org.name}</div>
           )}
+          <Link
+            href="/workspace"
+            className="mt-2 flex items-center gap-1.5 text-sm text-sidebar-foreground/80 hover:text-sidebar-foreground"
+          >
+            <Settings className="size-4" /> Workspace settings
+          </Link>
         </div>
 
         {active && profiles.length > 1 && (
