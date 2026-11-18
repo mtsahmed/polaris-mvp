@@ -1,8 +1,11 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import type { BetaMessageStream } from "@anthropic-ai/sdk/lib/BetaMessageStream";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
 import { addUsage, claude, CLAUDE_MODEL, emptyUsage, estimateCostUsd } from "../claude";
+import type { ProgressSink } from "../progress";
+import { currentProgress } from "../progress-context";
 import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, type StructuredRequest } from "../types";
 
 const MAX_CONTINUATIONS = 4;
@@ -23,6 +26,8 @@ function isUnavailable(err: unknown) {
   if (err instanceof Anthropic.RateLimitError) return true;
   if (err instanceof Anthropic.InternalServerError) return true;
   if (err instanceof Anthropic.APIConnectionError) return true; // includes timeouts
+  // An overload reported inside a stream arrives as a plain APIError with no status.
+  if (err instanceof Anthropic.APIError && /overloaded/i.test(err.message)) return true;
   if (err instanceof Anthropic.BadRequestError && /credit balance|billing/i.test(err.message)) return true;
   return false;
 }
@@ -91,9 +96,13 @@ export async function runAnthropic<S extends z.ZodType>(
 
   const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content }];
 
+  const progress = currentProgress();
+
   try {
     for (let i = 0; i <= MAX_CONTINUATIONS; i++) {
-      const response = await claude().beta.messages.parse({
+      // Streamed, so the connection to Claude is never silent and progress can be shown. The
+      // final message is parsed against the schema exactly as messages.parse() would.
+      const stream = claude().beta.messages.stream({
         model: requestedModel,
         max_tokens: req.maxTokens ?? 16000,
         system: req.system,
@@ -105,6 +114,8 @@ export async function runAnthropic<S extends z.ZodType>(
         // (only on models that support it).
         ...fallbackParams,
       });
+      reportProgress(stream, progress);
+      const response = await stream.finalMessage();
       addUsage(usage, response.usage);
       collectUrls(response.content, seen);
 
@@ -134,6 +145,28 @@ export async function runAnthropic<S extends z.ZodType>(
     if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, requestedModel, message));
     throw new ProviderFailedError(message, attempt(false, requestedModel, message));
   }
+}
+
+// Passes what Claude is doing to the progress sink: each search and page fetch once its input is
+// known, the start of thinking and writing, and the answer text as it arrives.
+function reportProgress(stream: BetaMessageStream<unknown>, progress: ProgressSink) {
+  let lastKind: "think" | "write" | null = null;
+  stream.on("contentBlock", (block) => {
+    if (block.type !== "server_tool_use") return;
+    const input = (block.input ?? {}) as { query?: string; url?: string };
+    if (block.name === "web_search") progress({ kind: "search", query: input.query });
+    else if (block.name === "web_fetch" && input.url) progress({ kind: "read", url: input.url });
+    lastKind = null;
+  });
+  stream.on("thinking", () => {
+    if (lastKind !== "think") progress({ kind: "think" });
+    lastKind = "think";
+  });
+  stream.on("text", (delta) => {
+    if (lastKind !== "write") progress({ kind: "write" });
+    lastKind = "write";
+    progress({ kind: "delta", text: delta });
+  });
 }
 
 // Records every page Claude fetched and every search result it was shown.

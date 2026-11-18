@@ -1,14 +1,14 @@
 import { Ban, CheckCircle2, History, Sparkles, UsersRound } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { AiStreamForm } from "@/components/ai-stream-form";
 import { Field } from "@/components/field";
-import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { brand } from "@/config/brand";
 import type { Icp, Profile } from "@/lib/types";
-import { approveIcp, draftIcpWithClaude, saveIcp } from "../actions";
+import { approveIcp, saveIcp } from "../actions";
 
 const LIST_FIELDS = [
   { key: "industries", label: "Industries", hint: "Required" },
@@ -20,6 +20,12 @@ const LIST_FIELDS = [
 
 // Equal, fixed-height boxes (scroll inside, drag the corner to enlarge) keep the ICP on about one screen.
 const ICP_BOX = "field-sizing-fixed h-56 resize-y text-[0.9375rem] leading-6";
+
+// Changes whenever the latest ICP's content changes, so a dropped connection can tell when the
+// AI draft has been saved (an unapproved draft is updated in place, so its id stays the same).
+function icpKey(icp: Icp) {
+  return [icp.id, ...icp.industries, ...icp.company_traits, ...icp.geographies, ...icp.titles, ...icp.problems_addressed, icp.notes ?? ""].join("|");
+}
 
 export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
   const latest = icps[0];
@@ -46,14 +52,18 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                 " Saving changes creates a new draft version; the approved one stays in force until you approve the new one."}
             </CardDescription>
           </div>
-          <ActionForm action={draftIcpWithClaude.bind(null, profile.id)}>
+          <AiStreamForm
+            task="icp-draft"
+            fields={{ profileId: profile.id }}
+            resultKey={latest ? icpKey(latest) : ""}
+            working="Polaris is drafting the ideal customer profile…"
+            note="Up to a minute."
+            panelClassName="max-w-xs"
+          >
             <SubmitButton variant="gradient-outline" working pendingLabel="Drafting…">
               <Sparkles /> Draft with AI
             </SubmitButton>
-            <PolarisWorkingWhilePending className="mt-3 max-w-xs">
-              Polaris is drafting the ideal customer profile. Up to a minute.
-            </PolarisWorkingWhilePending>
-          </ActionForm>
+          </AiStreamForm>
         </CardHeader>
         <CardContent className="space-y-6">
           <ActionForm action={saveIcp.bind(null, profile.id)} className="space-y-5" key={latest?.id ?? "new"}>

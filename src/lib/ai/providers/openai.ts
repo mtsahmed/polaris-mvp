@@ -4,6 +4,9 @@ import { zodTextFormat } from "openai/helpers/zod";
 import type { ResponseInputContent } from "openai/resources/responses/responses";
 import type { z } from "zod";
 import { fetchPage } from "../fetch-page";
+import { modelDisplayName } from "../models";
+import type { ProgressSink } from "../progress";
+import { currentProgress } from "../progress-context";
 import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, type StructuredRequest } from "../types";
 
 // OpenAI is the fallback provider. Models are tried in this order; a model is skipped
@@ -79,12 +82,14 @@ const WEB_SEARCH_USD_PER_CALL = 10 / 1000;
 async function buildContent<S extends z.ZodType>(
   req: StructuredRequest<S>,
   seen: Set<string>,
+  progress: ProgressSink,
 ): Promise<ResponseInputContent[]> {
   // OpenAI has no "read this URL" tool, so Polaris downloads each source page itself.
   const fetchNotes: string[] = [];
   const content: ResponseInputContent[] = [];
   const pageBlocks: string[] = [];
   for (const u of req.urls ?? []) {
+    progress({ kind: "read", url: u.url });
     const page = await fetchPage(u.url);
     if (!page.ok) {
       fetchNotes.push(`${u.label} (${u.url}) could not be read: ${page.error}`);
@@ -113,6 +118,7 @@ async function runOneModel<S extends z.ZodType>(
   req: StructuredRequest<S>,
   content: ResponseInputContent[],
   seen: Set<string>,
+  progress: ProgressSink,
 ): Promise<{ data: z.infer<S>; attempt: ProviderAttempt }> {
   const u = { input: 0, cached: 0, cacheWrite: 0, output: 0, searches: 0 };
   const attempt = (ok: boolean, error?: string): ProviderAttempt => ({
@@ -127,7 +133,9 @@ async function runOneModel<S extends z.ZodType>(
   });
 
   try {
-    const response = await openai().responses.parse({
+    // Streamed, so the connection to OpenAI is never silent and progress can be shown. The final
+    // response is parsed against the schema exactly as responses.parse() would.
+    const stream = openai().responses.stream({
       model,
       instructions: req.system,
       input: [{ role: "user", content }],
@@ -142,6 +150,8 @@ async function runOneModel<S extends z.ZodType>(
           }
         : {}),
     });
+    reportProgress(stream, progress);
+    const response = await stream.finalResponse();
     for (const item of response.output) {
       if (item.type === "web_search_call") {
         u.searches += 1;
@@ -175,6 +185,34 @@ async function runOneModel<S extends z.ZodType>(
   }
 }
 
+type OpenAIStream = ReturnType<ReturnType<typeof openai>["responses"]["stream"]>;
+
+// Passes what OpenAI is doing to the progress sink: each web search (with its query once known),
+// the start of reasoning and writing, and the answer text as it arrives.
+function reportProgress(stream: OpenAIStream, progress: ProgressSink) {
+  let lastKind: "think" | "write" | null = null;
+  stream.on("response.output_item.added", (event) => {
+    if (event.item.type === "reasoning" && lastKind !== "think") {
+      progress({ kind: "think" });
+      lastKind = "think";
+    } else if (event.item.type === "web_search_call") {
+      progress({ kind: "search" });
+      lastKind = null;
+    }
+  });
+  stream.on("response.output_item.done", (event) => {
+    if (event.item.type !== "web_search_call") return;
+    const action = event.item.action;
+    if (action?.type === "search" && action.query) progress({ kind: "search", query: action.query });
+    else if (action?.type === "open_page" && action.url) progress({ kind: "read", url: action.url });
+  });
+  stream.on("response.output_text.delta", (event) => {
+    if (lastKind !== "write") progress({ kind: "write" });
+    lastKind = "write";
+    progress({ kind: "delta", text: event.delta });
+  });
+}
+
 export class OpenAIExhaustedError extends Error {
   constructor(
     message: string,
@@ -191,11 +229,13 @@ export async function runOpenAI<S extends z.ZodType>(
   models: string[] = openaiModels(),
 ): Promise<{ data: z.infer<S>; attempts: ProviderAttempt[]; seenUrls: string[] }> {
   const seen = new Set<string>();
-  const content = await buildContent(req, seen);
+  const progress = currentProgress();
+  const content = await buildContent(req, seen, progress);
   const attempts: ProviderAttempt[] = [];
   for (const model of models) {
     try {
-      const { data, attempt } = await runOneModel(model, req, content, seen);
+      if (model !== models[0]) progress({ kind: "model", name: modelDisplayName(model) }); // moving to the next model
+      const { data, attempt } = await runOneModel(model, req, content, seen, progress);
       attempts.push(attempt);
       return { data, attempts, seenUrls: [...seen] };
     } catch (err) {

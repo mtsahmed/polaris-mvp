@@ -4,14 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fail, lines, ok, text, type ActionState } from "@/lib/action-state";
-import { anyProviderConfigured } from "@/lib/ai/generate";
-import { draftIcp } from "@/lib/ai/icp-draft";
-import { extractProfileIntelligence, type IntelligenceSource } from "@/lib/ai/profile-intelligence";
-import { handleAiError, logAttempts } from "@/lib/ai/log-attempts";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { QUESTIONNAIRE } from "@/lib/questionnaire";
-import { PROFILE_TYPES, type Icp, type Profile, type ProfileSource } from "@/lib/types";
+import { writeIcp, type IcpFields } from "@/lib/icp/write";
+import { PROFILE_TYPES, type Profile } from "@/lib/types";
 
 const UPLOAD_BUCKET = "profile-uploads";
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -258,85 +255,8 @@ export async function deleteSource(profileId: string, sourceId: string) {
 // Profile insights (the AI summary of a profile from its sources; table column: intelligence)
 // ---------------------------------------------------------------------------
 
-export async function generateIntelligence(
-  profileId: string,
-  _prev: ActionState,
-  _formData: FormData,
-): Promise<ActionState> {
-  const session = await requireSession();
-  if (!anyProviderConfigured()) {
-    return fail("Set ANTHROPIC_API_KEY (or OPENAI_API_KEY as a fallback) in .env.local to generate profile insights.");
-  }
-
-  const supabase = await createClient();
-  const [{ data: profile }, { data: sources }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", profileId).single<Profile>(),
-    supabase
-      .from("profile_sources")
-      .select("*")
-      .eq("profile_id", profileId)
-      .order("created_at")
-      .returns<ProfileSource[]>(),
-  ]);
-  if (!profile) return fail("Profile not found.");
-  if (!sources?.length) return fail("Add at least one link, file or questionnaire first.");
-
-  const inputs: IntelligenceSource[] = [];
-  for (const [i, s] of sources.entries()) {
-    const base = { id: s.id, label: `S${i + 1}`, kind: s.kind, location: s.location, title: s.title };
-    if (s.kind === "file" && !s.extracted_text) {
-      const { data: blob, error } = await supabase.storage.from(UPLOAD_BUCKET).download(s.location);
-      if (error || !blob) return fail(`Could not read ${s.title ?? "an uploaded file"}: ${error?.message}`);
-      inputs.push({ ...base, pdfBase64: Buffer.from(await blob.arrayBuffer()).toString("base64") });
-    } else {
-      inputs.push({ ...base, text: s.extracted_text ?? undefined });
-    }
-  }
-
-  try {
-    const result = await extractProfileIntelligence({
-      profileName: profile.name,
-      profileType: profile.type,
-      sources: inputs,
-    });
-    await logAttempts(supabase, session.org.id, "profile-intelligence", result.attempts);
-
-    // Map citation labels back to stored sources so the UI can link them.
-    const labelToSource = new Map(inputs.map((s) => [s.label, s]));
-    const evidence = result.data.evidence.map((e) => {
-      const src = labelToSource.get(e.source.trim());
-      return {
-        claim: e.claim,
-        quote: e.quote,
-        source: src ? (src.kind === "url" ? src.location : (src.title ?? src.label)) : `${e.source} (unmatched)`,
-      };
-    });
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        intelligence: {
-          ...result.data,
-          evidence,
-          model: result.model,
-          provider: result.provider,
-          source_ids: inputs.map((s) => s.id),
-        },
-        intelligence_generated_at: new Date().toISOString(),
-      })
-      .eq("id", profileId);
-    if (error) return fail(error.message);
-
-    revalidatePath(profilePath(profileId));
-    return ok(
-      result.provider === "openai"
-        ? "Draft ready (Claude was unavailable, so OpenAI wrote it). Review it, then apply it."
-        : "Draft ready. Review it, then apply it to the profile.",
-    );
-  } catch (err) {
-    return fail(await handleAiError(supabase, session.org.id, "profile-intelligence", err));
-  }
-}
+// Generating the draft runs through POST /api/ai/profile-intelligence, which streams its
+// progress: src/lib/ai-jobs/profile.ts.
 
 // Copies the reviewed draft into the editable profile fields.
 export async function applyIntelligence(profileId: string) {
@@ -367,70 +287,7 @@ export async function applyIntelligence(profileId: string) {
 // ICP (versioned; approval records who and when)
 // ---------------------------------------------------------------------------
 
-async function latestIcp(supabase: Awaited<ReturnType<typeof createClient>>, profileId: string) {
-  const { data } = await supabase
-    .from("icps")
-    .select("*")
-    .eq("profile_id", profileId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle<Icp>();
-  return data;
-}
-
-type IcpFields = Pick<Icp, "industries" | "company_traits" | "geographies" | "titles" | "problems_addressed" | "notes"> &
-  Partial<Pick<Icp, "excluded_geographies" | "competitors" | "min_employees">>;
-
-// Edits the current draft, or starts a new version if the latest one is already approved. A new
-// version keeps the previous knockouts unless the fields say otherwise (the AI draft never sets them).
-async function writeIcp(profileId: string, orgId: string, fields: IcpFields) {
-  const supabase = await createClient();
-  const latest = await latestIcp(supabase, profileId);
-  if (latest && !latest.approved) {
-    return supabase.from("icps").update(fields).eq("id", latest.id);
-  }
-  return supabase.from("icps").insert({
-    excluded_geographies: latest?.excluded_geographies ?? [],
-    competitors: latest?.competitors ?? [],
-    min_employees: latest?.min_employees ?? null,
-    ...fields,
-    org_id: orgId,
-    profile_id: profileId,
-    version: (latest?.version ?? 0) + 1,
-  });
-}
-
-export async function draftIcpWithClaude(
-  profileId: string,
-  _prev: ActionState,
-  _formData: FormData,
-): Promise<ActionState> {
-  const session = await requireSession();
-  if (!anyProviderConfigured()) {
-    return fail("Set ANTHROPIC_API_KEY (or OPENAI_API_KEY as a fallback) in .env.local to draft an ICP.");
-  }
-  const supabase = await createClient();
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", profileId).single<Profile>();
-  if (!profile) return fail("Profile not found.");
-  if (!profile.positioning && profile.services.length === 0) {
-    return fail("Fill in at least the positioning or services on the profile first.");
-  }
-
-  try {
-    const result = await draftIcp(profile);
-    await logAttempts(supabase, session.org.id, "icp-draft", result.attempts);
-    const { error } = await writeIcp(profileId, session.org.id, result.data);
-    if (error) return fail(error.message);
-    revalidatePath(profilePath(profileId));
-    return ok(
-      result.provider === "openai"
-        ? "ICP drafted by OpenAI (Claude was unavailable). Edit it, then approve it."
-        : "ICP drafted. Edit it, then approve it.",
-    );
-  } catch (err) {
-    return fail(await handleAiError(supabase, session.org.id, "icp-draft", err));
-  }
-}
+// Drafting with AI runs through POST /api/ai/icp-draft (src/lib/ai-jobs/profile.ts).
 
 export async function saveIcp(profileId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await requireSession();
@@ -454,7 +311,7 @@ export async function saveIcp(profileId: string, _prev: ActionState, formData: F
     if (!Number.isInteger(n) || n < 1) return fail("Minimum company size must be a whole number of employees, 1 or more.");
     fields.min_employees = n;
   }
-  const { error } = await writeIcp(profileId, session.org.id, fields);
+  const { error } = await writeIcp(await createClient(), profileId, session.org.id, fields);
   if (error) return fail(error.message);
   revalidatePath(profilePath(profileId));
   return ok("ICP saved as a draft.");

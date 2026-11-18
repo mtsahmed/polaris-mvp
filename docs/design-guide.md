@@ -80,6 +80,11 @@ are in `src/components/polaris-working.tsx`.
   without the star.
 - **Long waits inside a form** (about a minute or more): add `<PolarisWorkingWhilePending>` with one
   sentence on what Polaris is doing and how long it takes. It shows only while the form is submitting.
+- **AI steps the user waits on** (profile insights, ICP draft, Find companies, pitch research, concepts,
+  email): use `<AiStreamForm>` (`src/components/ai-stream-form.tsx`) instead of `ActionForm`. Its panel
+  replaces the static line with live progress ("Searching the web for …", "Reading naturahq.com…"), adds a
+  one-sentence `note` on timing, and shows the email draft as it is written. When the form sits in a card
+  header, pass `panelSlot` and put `<div id="…" className="empty:hidden" />` at the top of the card body.
 - **Background work the page waits for** (Intelligence research, contact search): `<PolarisWorking panel>`,
   a dashed brand-tinted panel with a larger star. The text uses the side-note style (13px, italic, grey)
   and says when it started, how long it usually takes and that the page updates by itself.

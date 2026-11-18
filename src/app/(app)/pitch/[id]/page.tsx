@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Lightbulb, Mail, MessageCircleQuestion, NotebookPen, RefreshCw, Search, Sparkles } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { AiStreamForm } from "@/components/ai-stream-form";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { NextAction } from "@/components/next-action";
 import { FollowProfile } from "@/components/profile-switcher";
@@ -27,18 +28,12 @@ import { DEAL_TYPES, type Company, type Concept, type Pitch, type Prospect, type
 import {
   approvePitch,
   chooseConcept,
-  createConcepts,
-  createPitch,
   deletePitchWorkspace,
-  refreshResearch,
   saveConcept,
   saveNotes,
   savePitch,
 } from "../actions";
 import { followProfile } from "../../profile-actions";
-
-// AI steps (research with web search, concepts, emails) can take a few minutes.
-export const maxDuration = 300;
 
 const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 const dateTimeFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -132,13 +127,22 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                 )}
               </p>
             </div>
-            <ActionForm action={refreshResearch.bind(null, prospect.id)} className="mt-4 shrink-0 sm:mt-0">
+            <AiStreamForm
+              task="pitch-research"
+              fields={{ prospectId: prospect.id }}
+              resultKey={prospect.researched_at}
+              panelSlot="pitch-research-panel"
+              working="Polaris is reading the site and searching for evidence…"
+              note="This takes a minute or two. If you leave, the research still finishes and is saved."
+              className="mt-4 shrink-0 sm:mt-0"
+            >
               <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
                 <RefreshCw /> {prospect.researched_at ? "Refresh research" : "Research company"}
               </SubmitButton>
-            </ActionForm>
+            </AiStreamForm>
           </CardHeader>
           <CardContent className="space-y-8">
+            <div id="pitch-research-panel" className="empty:hidden" />
             {company.summary && (
               <section className="rounded-2xl border-l-4 border-brand/60 bg-muted/50 px-6 py-5">
                 <h3 className="mb-2 font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
@@ -242,17 +246,21 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                 Two or three ideas built on the research, each tagged with its deal type. Edit any of them, then choose the one to pitch.
               </CardDescription>
             </div>
-            <ActionForm action={createConcepts.bind(null, prospect.id)}>
-              <SubmitButton
-                variant="gradient-outline"
-                working
-                pendingLabel="Drafting concepts…"
-              >
+            <AiStreamForm
+              task="pitch-concepts"
+              fields={{ prospectId: prospect.id }}
+              resultKey={concepts?.map((c) => c.id).join(",") ?? ""}
+              panelSlot="pitch-concepts-panel"
+              working="Polaris is drafting concepts from the research…"
+              note="Usually under a minute."
+            >
+              <SubmitButton variant="gradient-outline" working pendingLabel="Drafting concepts…">
                 <Sparkles /> {concepts?.length ? "Redraft concepts" : "Draft concepts"}
               </SubmitButton>
-            </ActionForm>
+            </AiStreamForm>
           </CardHeader>
           <CardContent>
+            <div id="pitch-concepts-panel" className="mb-5 empty:hidden" />
             {!concepts?.length ? (
               <p className="text-base text-muted-foreground">
                 {signals.length ? "No concepts yet." : "Concepts need at least one cited finding."}
@@ -381,14 +389,22 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
               </CardDescription>
             </div>
             {selected && (
-              <ActionForm action={createPitch.bind(null, prospect.id)}>
+              <AiStreamForm
+                task="pitch-email"
+                fields={{ prospectId: prospect.id }}
+                resultKey={email?.id ?? ""}
+                panelSlot="pitch-email-panel"
+                working="Polaris is writing the email in the profile's voice…"
+                note="Usually under a minute. The draft appears below as it is written."
+              >
                 <SubmitButton variant="gradient-outline" working pendingLabel="Writing the email…">
                   <Sparkles /> {email ? "Rewrite both" : "Write email"}
                 </SubmitButton>
-              </ActionForm>
+              </AiStreamForm>
             )}
           </CardHeader>
           <CardContent>
+            <div id="pitch-email-panel" className="mb-5 empty:hidden" />
             {!email && !followUp ? (
               <p className="text-base text-muted-foreground">
                 {selected ? "No email yet." : "The email is written from the chosen concept and the cited research."}

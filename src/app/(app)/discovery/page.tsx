@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ChevronDown, Compass, Info, Plus, Target, Undo2, X } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { AiStreamForm } from "@/components/ai-stream-form";
 import { Field, NativeSelect } from "@/components/field";
 import { NextAction } from "@/components/next-action";
 import { PageHeader } from "@/components/page-header";
-import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { FollowProfile } from "@/components/profile-switcher";
 import { RichText } from "@/components/rich-text";
 import { SourceChip } from "@/components/source-chip";
@@ -24,7 +24,7 @@ import type { Company, Icp, Prospect, Signal } from "@/lib/types";
 import { followProfile } from "../profile-actions";
 import { unshortlistBlocker } from "@/lib/discovery/unshortlist";
 import { ConfirmSubmit } from "@/components/confirm-submit";
-import { dismissSuggestion, runDiscovery, shortlistSuggestion, unshortlistProspect } from "./actions";
+import { dismissSuggestion, shortlistSuggestion, unshortlistProspect } from "./actions";
 
 export const metadata: Metadata = { title: "Discovery" };
 // A discovery run searches the web several times; allow up to five minutes.
@@ -130,7 +130,13 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
             </CardDescription>
           </CardHeader>
           <CardContent className={SCROLL_INSIDE}>
-            <ActionForm action={runDiscovery} className="space-y-5">
+            <AiStreamForm
+              task="discovery"
+              className="space-y-5"
+              resultKey={String(rows?.length ?? 0)}
+              working="Polaris is searching the web for companies that fit…"
+              note="This takes two to four minutes. If you leave, the search still finishes and its suggestions appear here."
+            >
               <Field id="profile_id" label="Find companies for:" hint="The search uses this profile and its ICP.">
                 <NativeSelect id="profile_id" name="profile_id" defaultValue={profileId}>
                   {profiles.map((p) => (
@@ -165,10 +171,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
               <SubmitButton variant="gradient-outline" working pendingLabel="Finding companies…">
                 <Compass /> Find companies
               </SubmitButton>
-              <PolarisWorkingWhilePending>
-                Polaris is searching the web for companies that fit. This takes two to four minutes; keep this page open.
-              </PolarisWorkingWhilePending>
-            </ActionForm>
+            </AiStreamForm>
           </CardContent>
         </Card>
 

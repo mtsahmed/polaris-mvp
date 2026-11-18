@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Globe, Search } from "lucide-react";
-import { ActionForm, SubmitButton } from "@/components/action-form";
+import { SubmitButton } from "@/components/action-form";
+import { AiStreamForm } from "@/components/ai-stream-form";
 import { Field, NativeSelect } from "@/components/field";
-import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,11 +15,8 @@ import { createClient } from "@/lib/supabase/server";
 import { STAGE_LABEL } from "@/lib/pitch-utils";
 import type { PipelineStage } from "@/lib/types";
 import { NextAction } from "@/components/next-action";
-import { startPitch } from "./actions";
 
 export const metadata: Metadata = { title: "Pitch studio" };
-// Research reads the company's site and runs web searches; allow up to five minutes.
-export const maxDuration = 300;
 
 type Row = {
   id: string;
@@ -72,7 +69,13 @@ export default async function PitchStudioPage(props: PageProps<"/pitch">) {
                 </Link>
               </p>
             ) : (
-              <ActionForm action={startPitch} className="space-y-5">
+              <AiStreamForm
+                task="pitch-start"
+                className="space-y-5"
+                resultKey={rows?.[0]?.id ?? null}
+                working="Polaris is reading the site and searching for evidence…"
+                note="This takes a minute or two. If you leave, the research still finishes and appears in Pitches."
+              >
                 <Field
                   id="profile_id"
                   label="Pitching for (your side):"
@@ -119,10 +122,7 @@ export default async function PitchStudioPage(props: PageProps<"/pitch">) {
                 <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
                   <Search /> Research company
                 </SubmitButton>
-                <PolarisWorkingWhilePending>
-                  Polaris is reading the site and searching for evidence. This takes a minute or two.
-                </PolarisWorkingWhilePending>
-              </ActionForm>
+              </AiStreamForm>
             )}
           </CardContent>
         </Card>

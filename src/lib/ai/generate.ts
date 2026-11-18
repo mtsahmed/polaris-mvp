@@ -1,8 +1,10 @@
 import "server-only";
 import type { z } from "zod";
 import { modelDisplayName } from "./models";
+import { CLAUDE_MODEL } from "./claude";
+import { currentProgress } from "./progress-context";
 import { anthropicConfigured, runAnthropic } from "./providers/anthropic";
-import { OpenAIExhaustedError, openaiConfigured, runOpenAI } from "./providers/openai";
+import { OpenAIExhaustedError, openaiConfigured, openaiModels, runOpenAI } from "./providers/openai";
 import { selectedModel } from "./selection";
 import {
   AiError,
@@ -23,6 +25,8 @@ export function anyProviderConfigured() {
 // - Auto (the default): Claude first (roadmap decision). OpenAI only takes over when Claude is
 //   unavailable: missing or invalid key, no credit, rate limit, outage. A refusal or a bad
 //   answer from Claude is reported, not re-sent to another vendor.
+// Progress (model, searches, pages read, the answer as it is written) goes to the sink set by
+// withAiProgress() in progress-context.ts, when a streaming route runs the job.
 export async function generateStructured<S extends z.ZodType>(req: StructuredRequest<S>): Promise<StructuredResult<z.infer<S>>> {
   const choice = await selectedModel();
   if (choice) return runChosen(req, choice.provider, choice.model.id);
@@ -37,6 +41,7 @@ async function runChosen<S extends z.ZodType>(
   const attempts: ProviderAttempt[] = [];
   const name = modelDisplayName(model);
   const hint = " Pick another model in the sidebar, or Auto.";
+  currentProgress()({ kind: "model", name });
 
   if (provider === "anthropic") {
     if (!anthropicConfigured()) throw new AiError(`${name} needs ANTHROPIC_API_KEY in .env.local.${hint}`, attempts);
@@ -65,8 +70,10 @@ async function runChosen<S extends z.ZodType>(
 
 async function runAuto<S extends z.ZodType>(req: StructuredRequest<S>): Promise<StructuredResult<z.infer<S>>> {
   const attempts: ProviderAttempt[] = [];
+  const progress = currentProgress();
 
   if (anthropicConfigured()) {
+    progress({ kind: "model", name: modelDisplayName(CLAUDE_MODEL) });
     try {
       const { data, attempt, seenUrls } = await runAnthropic(req);
       attempts.push(attempt);
@@ -77,10 +84,12 @@ async function runAuto<S extends z.ZodType>(req: StructuredRequest<S>): Promise<
         throw new AiError(err instanceof Error ? err.message : "Claude failed.", attempts);
       }
       if (!openaiConfigured()) throw new AiError(`${err.message} No fallback provider is configured.`, attempts);
+      progress({ kind: "fallback", reason: err.message });
     }
   }
 
   if (openaiConfigured()) {
+    if (!anthropicConfigured()) progress({ kind: "model", name: modelDisplayName(openaiModels()[0]) });
     try {
       const result = await runOpenAI(req);
       attempts.push(...result.attempts);

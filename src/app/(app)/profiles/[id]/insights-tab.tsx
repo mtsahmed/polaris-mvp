@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { PolarisWorkingWhilePending } from "@/components/polaris-working";
 import { FilePenLine, MessageCircleQuestion, Quote, Sparkles } from "lucide-react";
-import { ActionForm, SubmitButton } from "@/components/action-form";
+import { SubmitButton } from "@/components/action-form";
+import { AiStreamForm } from "@/components/ai-stream-form";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/lib/types";
-import { applyIntelligence, generateIntelligence } from "../actions";
+import { applyIntelligence } from "../actions";
 
 function List({ items }: { items: string[] }) {
   if (items.length === 0) return <p className="text-base italic text-muted-foreground">Not supported by the sources</p>;
@@ -50,14 +50,18 @@ export function InsightsTab({ profile, sourceCount }: { profile: Profile; source
               Add sources first
             </Link>
           ) : (
-            <ActionForm action={generateIntelligence.bind(null, profile.id)}>
+            <AiStreamForm
+              task="profile-intelligence"
+              fields={{ profileId: profile.id }}
+              resultKey={profile.intelligence_generated_at}
+              working="Polaris is reading your sources and drafting the profile…"
+              note="Up to a minute."
+              panelClassName="max-w-xs"
+            >
               <SubmitButton variant="gradient-outline" working pendingLabel="Reading sources…">
                 <Sparkles /> {intel ? "Regenerate draft" : "Generate draft"}
               </SubmitButton>
-              <PolarisWorkingWhilePending className="mt-3 max-w-xs">
-                Polaris is reading your sources and drafting the profile. Up to a minute.
-              </PolarisWorkingWhilePending>
-            </ActionForm>
+            </AiStreamForm>
           )}
         </CardHeader>
         {intel && profile.intelligence_generated_at && (

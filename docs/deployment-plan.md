@@ -29,6 +29,11 @@ Polaris has run only on `localhost:3000` until now, against the owner's real Sup
 
 ### 1b. Stream user-facing AI responses (before go-live)
 
+**Status: built 18 November 2026; not yet run against the real AI providers.** As built:
+- Progress reaches `generateStructured()` and the providers through an async context (`withAiProgress()` in `src/lib/ai/progress-context.ts`), not an `onProgress` argument. So the AI helpers in `src/lib/ai/` did not change, and the Intelligence and contact jobs simply report to nobody.
+- Seven tasks run through one route, `POST /api/ai/[task]`: Pitch studio's start and Refresh research both count as research. The job bodies moved from the server actions to `src/lib/ai-jobs/`.
+- Forms use `AiStreamForm` (`src/components/ai-stream-form.tsx`) with the `useAiStream` hook. Each passes a `resultKey`, such as a timestamp or id, so polling after a dropped connection knows when the result is saved.
+
 **Why.** Six AI actions still make the browser wait on one silent request until the whole answer is back, often one to three minutes with web search:
 - profile intelligence (`src/lib/ai/profile-intelligence.ts`);
 - the ICP draft (`icp-draft.ts`, `draftIcpWithClaude` in `profiles/actions.ts`);
