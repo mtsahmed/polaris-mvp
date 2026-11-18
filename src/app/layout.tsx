@@ -35,6 +35,18 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: seo.title, description: seo.description },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   formatDetection: { telephone: false, email: false, address: false },
+  // Favicons from scripts/favicons/make-favicons.mjs: a light and a dark version, picked by the
+  // browser's colour scheme. src/app/favicon.ico is added by Next.js. The Apple icon is declared
+  // here, because Next.js drops a file-based apple-icon once the layout lists its own icons.
+  icons: {
+    icon: [
+      { url: "/icons/favicon-light.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
+      { url: "/icons/favicon-dark.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
+      { url: "/icons/favicon-light-32.png", type: "image/png", sizes: "32x32", media: "(prefers-color-scheme: light)" },
+      { url: "/icons/favicon-dark-32.png", type: "image/png", sizes: "32x32", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: [{ url: "/icons/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

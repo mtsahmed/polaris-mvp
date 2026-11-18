@@ -13,6 +13,7 @@ sign-in stays out of them, and is also private by design.
 | `robots.txt` | `src/app/robots.ts` | Allows `/` and the route-map embed `/how-it-works.html`; disallows the app, auth steps and `/api/`. Points to the sitemap. |
 | `sitemap.xml` | `src/app/sitemap.ts` | The landing page. Add each new public page here. |
 | Web app manifest | `src/app/manifest.ts` | Name, colours and icon when saved to a phone or desktop. |
+| Favicons (light and dark) | `public/icons/`, `src/app/favicon.ico`, icons in `src/app/layout.tsx` | The brand star on a white tile for light browser themes and on navy for dark ones, plus the Apple icon and 192/512 app icons. Regenerate with `node scripts/favicons/make-favicons.mjs`. |
 | Structured data (JSON-LD) | `src/app/page.tsx` | `Organization` (TiffanyAI) and `SoftwareApplication` (Polaris). |
 | `noindex` on private pages | `src/app/(app)/layout.tsx`, login, onboarding, reset password | `noindex, follow`, and no canonical link. |
 | Search files reachable when signed out | `PUBLIC_PATHS` in `src/lib/supabase/proxy-session.ts` | Without this the proxy sends crawlers to the sign-in page. |
