@@ -4,7 +4,19 @@ import { publicEnv } from "@/lib/env";
 
 // "/" is the public landing page with the dark route map (public/how-it-works.html); the light
 // copy is for signed-in pages only.
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/how-it-works.html", "/api/impact-report"];
+// Search files (robots, sitemap, manifest, share image) must be reachable signed out, or
+// crawlers are sent to the sign-in page (docs/seo-plan.md).
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/auth",
+  "/how-it-works.html",
+  "/api/impact-report",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/manifest.webmanifest",
+  "/opengraph-image",
+];
 
 // Refreshes the Supabase session on every request and keeps signed-out users on public pages.
 export async function updateSession(request: NextRequest) {

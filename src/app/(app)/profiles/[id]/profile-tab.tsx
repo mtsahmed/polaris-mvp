@@ -1,12 +1,11 @@
-import { Building2, PenLine, Target } from "lucide-react";
+import { PenLine, Target } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { Field, NativeSelect } from "@/components/field";
+import { Field } from "@/components/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PROFILE_TYPES, type Profile } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import { brand } from "@/config/brand";
-import { updateProfile } from "../actions";
+import { updateProfileDetails } from "../actions";
 
 // Shown as a placeholder only, so the made-up example can never be saved as the person's writing.
 const WRITING_SAMPLES_EXAMPLE = [
@@ -19,40 +18,16 @@ const WRITING_SAMPLES_EXAMPLE = [
   "(third sample)",
 ].join("\n");
 
-export function OverviewTab({ profile }: { profile: Profile }) {
+// The Profile tab, fourth after Business info, Sources and Insights (owner review, 18 Nov 2026):
+// positioning and writing samples, which "Apply to profile" on the Insights tab fills in.
+export function ProfileDetailsTab({ profile }: { profile: Profile }) {
   return (
-    <ActionForm action={updateProfile.bind(null, profile.id)} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle icon={Building2}>Basics</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-2">
-          <Field id="name" label="Name">
-            <Input id="name" name="name" defaultValue={profile.name} required maxLength={160} />
-          </Field>
-          <Field id="type" label="Profile type">
-            <NativeSelect id="type" name="type" defaultValue={profile.type}>
-              {PROFILE_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                  {t.tuned ? "" : " (not yet tuned)"}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <div className="sm:col-span-2">
-            <Field id="website" label="Website">
-              <Input id="website" name="website" defaultValue={profile.website ?? ""} inputMode="url" />
-            </Field>
-          </div>
-        </CardContent>
-      </Card>
-
+    <ActionForm action={updateProfileDetails.bind(null, profile.id)} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle icon={Target}>Positioning</CardTitle>
           <CardDescription>
-            Fill these in yourself, or generate a sourced draft on the Intelligence tab and apply it here.
+            Fill these in yourself, or generate a sourced draft on the Insights tab and apply it here.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">

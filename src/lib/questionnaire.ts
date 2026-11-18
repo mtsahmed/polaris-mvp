@@ -5,3 +5,37 @@ export const QUESTIONNAIRE = [
   { key: "ideal_partner", label: "What kind of partner or brand would be a dream fit, and why?" },
   { key: "avoid", label: "Anything you will not do, or brands you will not work with?" },
 ] as const;
+
+// Answers typed under "Open questions" on the Insights tab are kept as their own source (same
+// kind as the questionnaire, told apart by `location`), so the next insights draft reads them.
+export const QUESTIONNAIRE_LOCATION = "questionnaire";
+export const OPEN_ANSWERS_LOCATION = "open-questions";
+export const OPEN_ANSWERS_TITLE = "Answers to open questions";
+
+export type QaPair = { q: string; a: string };
+
+export function formatQa(pairs: QaPair[]): string {
+  return pairs.map(({ q, a }) => `Q: ${q}\nA: ${a}`).join("\n\n");
+}
+
+// Reads text written by formatQa. An answer may contain blank lines; a new pair starts only at
+// a blank line followed by "Q: ".
+export function parseQa(text: string | null | undefined): QaPair[] {
+  if (!text) return [];
+  return text
+    .split(/\n\n(?=Q: )/)
+    .map((block) => block.match(/^Q: (.*)\nA: ([\s\S]*)$/))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map((m) => ({ q: m[1].trim(), a: m[2].trim() }));
+}
+
+// Merges newly typed answers into the saved ones: a non-empty answer replaces the old one for
+// that question, an emptied answer removes it, and answers to questions not shown stay.
+export function mergeQa(saved: QaPair[], submitted: QaPair[]): QaPair[] {
+  const out = new Map(saved.map((p) => [p.q, p.a]));
+  for (const { q, a } of submitted) {
+    if (a.trim()) out.set(q, a.trim());
+    else out.delete(q);
+  }
+  return [...out].map(([q, a]) => ({ q, a }));
+}

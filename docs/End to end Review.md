@@ -1,50 +1,17 @@
 End to end Review:
 
-1\. On Profile tab, the end of the page shows a button 'Next action (Ideal customer)' which leads to the ICP tab. However, in this way the user will skip the 'Sources' and 'Insights' tabs. There should be a way that user goes step-by-step, filling each tab or giving all the information on the way. Instead of jumping on tabs. So make these buttons practical so that each step and each tab is traversed by the user. The 'Profile' tab should show 'Next action (Sources)' button at the end, and 'Sources' tab should show 'Next action (Insights)'
+1. Under Profile --> Insights --> 'Generate Draft' took some 45 seconds, found Polaris wheel rotating, but no streaming action found there.
+2. "Open questions: The sources do not answer these. Add a source or answer them in the questionnaire." --> Where to add the answers to this questionnaire? 
+3. Problem: When i click on 'Apply to profile' button in 'Insights' tab, the tabs is shifted from Insights --> Profile again. Which is confusing and the customers would keep jumping between the tabs. 
+Solution: There should be natural dataflow design, so that forward transition becomes easier. There shouldn't be such back and forth traversing. The 'Apply to profile' button should apply the business insights to the given profile and show the 'Profile' tab next (after the Insights tab). Whereas the first tab should be 'Business info' rather than 'Profile'. Business info should show the 'Basic' card only. 'Positioning' and 'Writing samples' should be shown in 4th tab 'Profile' tab. So reorder the tabs as fol: 1) Business info, 2) Sources, 3) Insights, 4) Profile, 5) ICP
+4. When the 'Apply to profile' button is clicked and insights are applied to the profile, it should go grey and non-clickable. Whenever, a new data, insights, info is arrived, it should turn active and clickable. 
+5. Make the ICP cards more interactive and easier to make the ICP. Such as in each card, add grey suggestive example texts which fades away when user clicks inside the card. 
+6. Company search and Researching in 'Intelligence' takes too much time. How to reduce this time? Otherwise, this would break the Vercel's 300s rule.
+7. Find companies or search companies should give me at least 10 company search results to work on ahead.
+8. Dashboard should have two tabs: 'Main' and 'Table view'. 'Main' tab should also show a donut pie chart, showing leads by industry segment. Categorize the industry segment based on the profile insights and business info of the profile. the second tab 'Table view' should show all the companies in tabular format, each row showing one company. Add a dropdown menue for sorting the data in terms of: Recent, Oldest, Segment, Status, Region  [Segment means industry segment; Status means contacted, meeting booked, won/lost...etc]. The Table view will have fol columns: Company, Segment, Status, Main email, Notes. Make the company names clickable in the table view. Add editable fields in the Notes column to add any relevant notes for that company. Add a search bar to search a company or region from the table, place this search bar above this Table view, add filters to narrowdown the search results such as: Segment, Status, Date added
+9. Discover --> Discovery --> Suggestions --> Companies to review should fisrt show in a tabular format and all company detailed cards should show collapsed, with a downarrow to open each one. The tabular format should show Company, Industry segment, Company size, Location columns.
+10. Add SEO and its features from day one. Plan it and implement it.
 
-
-
-2\. When the draft is getting built, as it usually takes time of almost 1 minutes, so in that case, a Polaris logo should keep rotating, so keep the users attached to the screen, telling them them that the backend work is being done. Do this for 'Find companies' too, when the button is clicked. 
-
-
-
-3\. In the 'Discovery' page, shorten the height of the blocks 'Find companies' and 'What the search uses', so that the user doesn't have to scroll longer down the page. Adjust the block height in a way that it is scrollable inside the block. Similarly, do this action for 'Suggestions' block too. 
-
-
-
-4\. Discovery --> Shortlisted --> There should be a way to remove a company from shortlisting back to 'Suggestions'. A small delete icon near the company name, which removes it from the 'Shortlisted' and adds the company back to 'Suggestions'. 
-
-
-
-5\. On the 'Intelligence' page, --> 'Pursue' --> I clicked on the 'Air Conditioning Contractors of America (ACCA)' company --> Pursue --> 'Next action (Contacts)' --> I land on the Contacts page, but I see contacts of Natura too. I should I only see contacts of the company that I'm pursuing, here in this case, 'Air Conditioning Contractors of America (ACCA)' company. While the contacts of past companies which were interacted should be wrapped or added in a collapsible block \[with a short down arrow, clicking on it will open this block to view] named 'Other Contacts' \\n '*Contacts of previously contacted companies'.*
-
-* Intelligence --> 1 Researching --> 'Researching since Nov 16, 5:31 PM. This usually takes two to four minutes; the page updates by itself.' make this info message italic, and 1 px decrease its size, grey font color. and show Polaris wheel/logo rotating when the research work is being done by the Polaris. Make it a rule on site-wide, whenever, a Polaris work is being done in the background/research/finding/thinking/email writing etc, show this Polaris wheel rotating to show users that something is in the offing, being done in the background.
-
-
-
-*6.* On 'Outreach' tab, all blocks of companies should be shown collapsed by default, and the user would click a down arrow on any intended block to open it and see what to do next.
-
-
-
-*7.* The pipeline should be renamed as 'Dashboard'. The dashboard should be easier to view and look like GHL dashboard. Rearrange its display such as: New lead, Researching, Ready to pitch, Contacted blocks should show above and Replied, Meeting booked, Won, Lost blocks should show below. Also optimize the spaces and reduce the text font size to make blocks and data appear normal and easier to read. Each block should show total number of companies status in a whole number, and should show max of 5 recent companies per block with names in each block.
-
-
-
-8\. In the Outreach page, how to log the record of 'Replied' status? There's no way to manually update the Replied status of a company. 
-
-
-
-9\. Show a mindmap of how Polaris works on the main page, and after login screen for users to understand.
-
-
-
-\----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-1. Add Business impact calculator
-2. SEO from scratch
-3. 
 
 
 

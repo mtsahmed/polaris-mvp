@@ -5,7 +5,7 @@ import { Field } from "@/components/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { QUESTIONNAIRE } from "@/lib/questionnaire";
+import { QUESTIONNAIRE, QUESTIONNAIRE_LOCATION } from "@/lib/questionnaire";
 import type { ProfileSource } from "@/lib/types";
 import { addUrlSource, deleteSource, saveQuestionnaire } from "../actions";
 import { FileUpload } from "./file-upload";
@@ -24,7 +24,7 @@ function parseQuestionnaire(text: string | null): Record<string, string> {
 }
 
 export function SourcesTab({ profileId, sources }: { profileId: string; sources: ProfileSource[] }) {
-  const questionnaire = sources.find((s) => s.kind === "questionnaire");
+  const questionnaire = sources.find((s) => s.kind === "questionnaire" && s.location === QUESTIONNAIRE_LOCATION);
   const answers = parseQuestionnaire(questionnaire?.extracted_text ?? null);
 
   return (
@@ -95,7 +95,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
         </Card>
       </div>
 
-      <Card className="self-start">
+      <Card id="questionnaire" className="self-start scroll-mt-24">
         <CardHeader>
           <CardTitle icon={ClipboardList}>Owner questionnaire</CardTitle>
           <CardDescription>

@@ -99,6 +99,7 @@ export type Company = {
   industry: string | null;
   location: string | null;
   summary: string | null;
+  size: string | null; // as a source states it, e.g. "11–50 employees" (migration 20261126)
   created_at: string;
 };
 
@@ -143,6 +144,7 @@ export type Prospect = {
   discovered_at: string | null;
   discovery_model: string | null;
   discovery_focus: string | null;
+  segment: string | null; // industry segment from the ICP's industries (migration 20261126)
   shortlisted_at: string | null;
   decision: ProspectDecision;
   decided_by: string | null;

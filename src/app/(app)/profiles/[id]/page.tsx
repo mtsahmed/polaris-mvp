@@ -17,13 +17,17 @@ import { PROFILE_TYPES, type Icp, type Profile, type ProfileSource } from "@/lib
 import { deleteProfile } from "../actions";
 import { IcpTab } from "./icp-tab";
 import { InsightsTab } from "./insights-tab";
-import { OverviewTab } from "./overview-tab";
+import { BusinessTab } from "./business-tab";
+import { ProfileDetailsTab } from "./profile-tab";
 import { SourcesTab } from "./sources-tab";
 
+// Tab order follows the data (owner review, 18 Nov 2026): business info → sources → insights
+// drafted from them → the profile those insights fill in → the ICP.
 const TABS = [
-  { key: "overview", label: "Profile" },
+  { key: "business", label: "Business info" },
   { key: "sources", label: "Sources" },
   { key: "insights", label: "Insights" },
+  { key: "profile", label: "Profile" },
   { key: "icp", label: "ICP" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -38,7 +42,8 @@ export async function generateMetadata(props: PageProps<"/profiles/[id]">): Prom
 export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
   const { id } = await props.params;
   const { tab: rawTab } = await props.searchParams;
-  const tab: TabKey = TABS.some((t) => t.key === rawTab) ? (rawTab as TabKey) : "overview";
+  // "overview" was the first tab's key before 18 Nov 2026; old links land on Business info.
+  const tab: TabKey = TABS.some((t) => t.key === rawTab) ? (rawTab as TabKey) : "business";
 
   await requireSession();
   const supabase = await createClient();
@@ -108,9 +113,10 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
         ))}
       </nav>
 
-      {tab === "overview" && <OverviewTab profile={profile} />}
+      {tab === "business" && <BusinessTab profile={profile} />}
       {tab === "sources" && <SourcesTab profileId={profile.id} sources={sources ?? []} />}
-      {tab === "insights" && <InsightsTab profile={profile} sourceCount={sources?.length ?? 0} />}
+      {tab === "insights" && <InsightsTab profile={profile} sources={sources ?? []} />}
+      {tab === "profile" && <ProfileDetailsTab profile={profile} />}
       {tab === "icp" && <IcpTab profile={profile} icps={icps ?? []} />}
 
       <NextAction current={tab === "icp" ? "icp" : "profile"} profileId={profile.id} profileTab={tab} />

@@ -6,7 +6,7 @@ import type { z } from "zod";
 import { addUsage, claude, CLAUDE_MODEL, emptyUsage, estimateCostUsd } from "../claude";
 import type { ProgressSink } from "../progress";
 import { currentProgress } from "../progress-context";
-import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, type StructuredRequest } from "../types";
+import { ProviderFailedError, ProviderUnavailableError, TIME_LIMIT_MESSAGE, type ProviderAttempt, type StructuredRequest } from "../types";
 
 const MAX_CONTINUATIONS = 4;
 
@@ -113,7 +113,7 @@ export async function runAnthropic<S extends z.ZodType>(
         // On a safety decline the API retries on a fallback Claude model inside the same call
         // (only on models that support it).
         ...fallbackParams,
-      });
+      }, { signal: req.signal });
       reportProgress(stream, progress);
       const response = await stream.finalMessage();
       addUsage(usage, response.usage);
@@ -141,6 +141,7 @@ export async function runAnthropic<S extends z.ZodType>(
     throw new ProviderFailedError("Claude did not finish after several continuations.", attempt(false, requestedModel, "continuations"));
   } catch (err) {
     if (err instanceof ProviderFailedError) throw err;
+    if (req.signal?.aborted) throw new ProviderFailedError(TIME_LIMIT_MESSAGE, attempt(false, requestedModel, "time limit"));
     const message = describe(err);
     if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, requestedModel, message));
     throw new ProviderFailedError(message, attempt(false, requestedModel, message));

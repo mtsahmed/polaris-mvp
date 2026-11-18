@@ -10,7 +10,36 @@ import { icpSummary, profileSummary } from "./profile-summary";
 // a light relevance summary. Scoring and deeper research happen in the Intelligence stage.
 // ---------------------------------------------------------------------------
 
-export const MAX_DISCOVERY = 8;
+// End-to-end review (18 Nov 2026): at least 10 companies per run, within Vercel's 300-second
+// limit. One search for 5 companies took about three minutes, so a run is split into batches of
+// about 5 that search in parallel, each from a different angle (an ICP industry where possible).
+export const DISCOVERY_COUNTS = [10, 15, 20] as const;
+export const DEFAULT_DISCOVERY = 10;
+export const MAX_DISCOVERY = 20;
+const BATCH_SIZE = 5;
+
+// Variety for runs with more batches than ICP industries.
+const EXTRA_ANGLES = [
+  "smaller, independent or founder-led companies",
+  "established mid-size companies",
+  "companies with news from the last six months (launches, funding, expansion, hiring)",
+  "companies in a neighbouring niche that still fits the ICP",
+];
+
+export type DiscoveryBatch = { ask: number; angle: string | null };
+
+// Splits a run into parallel batches. Each asks for one more company than its share, since some
+// are dropped (no website, no finding whose link was read) or found by two batches. Pure.
+export function planDiscoveryBatches(count: number, industries: string[]): DiscoveryBatch[] {
+  const n = Math.max(1, Math.ceil(count / BATCH_SIZE));
+  const ask = Math.ceil(count / n) + 1;
+  if (n === 1) return [{ ask, angle: null }];
+  return Array.from({ length: n }, (_, i) => {
+    const own = industries.filter((_, j) => j % n === i);
+    const angle = own.length ? own.join("; ") : EXTRA_ANGLES[(i - industries.length + EXTRA_ANGLES.length * n) % EXTRA_ANGLES.length];
+    return { ask, angle };
+  });
+}
 
 const DiscoverySchema = z.object({
   companies: z
@@ -20,6 +49,12 @@ const DiscoverySchema = z.object({
         website: z.string().describe("The company's own homepage URL. Empty if you did not see it."),
         industry: z.string().describe("Industry in a few words. Empty if the sources do not say."),
         location: z.string().describe("Headquarters city and state or country. Empty if the sources do not say."),
+        size: z
+          .string()
+          .describe('Company size as a source states it, e.g. "11-50 employees" or "about 200 staff". Empty if no source says.'),
+        segment: z
+          .string()
+          .describe("The one target segment from the list in the prompt this company belongs to, copied exactly. \"Other\" if none fits."),
         fit_summary: z
           .string()
           .describe("One or two sentences: why this company looks relevant to the profile's ICP, from the findings only. A quick relevance check, not a verdict."),
@@ -65,6 +100,9 @@ export async function discoverCompanies(input: {
   focus: string | null;
   count: number;
   exclude: string[];
+  angle?: string | null; // this batch's share of the search
+  segments: string[];
+  signal?: AbortSignal;
 }) {
   return generateStructured({
     task: "discovery",
@@ -75,12 +113,17 @@ The profile we represent (do not include it):
 ${profileSummary(input.profile)}
 
 ${icpSummary(input.icp)}
-${input.focus ? `\nThe user wants this search narrowed to: ${input.focus}\n` : ""}
+${input.focus ? `\nThe user wants this search narrowed to: ${input.focus}\n` : ""}${
+      input.angle ? `\nOther searches run at the same time cover other parts of the ICP. Search only this part: ${input.angle}\n` : ""
+    }
+Target segments (pick one per company, copied exactly, or "Other"): ${input.segments.length ? input.segments.join(" | ") : "(none given: use Other)"}
+
 Exclude these domains (already in the profile's pipeline or dismissed): ${input.exclude.length ? input.exclude.join(", ") : "(none)"}`,
     schema: DiscoverySchema,
     schemaName: "company_discovery",
-    webSearch: { maxUses: 10 },
-    effort: "high",
-    maxTokens: 16000,
+    webSearch: { maxUses: 6 },
+    effort: "medium",
+    maxTokens: 12000,
+    signal: input.signal,
   });
 }

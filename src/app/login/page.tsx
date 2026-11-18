@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { noIndex } from "@/config/seo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
@@ -10,7 +11,11 @@ import { SignUpForm } from "./signup-form";
 
 export async function generateMetadata(props: PageProps<"/login">): Promise<Metadata> {
   const { mode } = await props.searchParams;
-  return { title: mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in" };
+  return {
+    title: mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in",
+    robots: noIndex,
+    alternates: { canonical: null },
+  };
 }
 
 // One compact card: email, password, and both actions. The landing page (/) carries the pitch.

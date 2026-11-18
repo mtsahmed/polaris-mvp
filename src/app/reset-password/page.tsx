@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { noIndex } from "@/config/seo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
@@ -6,7 +7,7 @@ import { brand } from "@/config/brand";
 import { createClient } from "@/lib/supabase/server";
 import { NewPasswordForm } from "./new-password-form";
 
-export const metadata: Metadata = { title: "Choose a new password" };
+export const metadata: Metadata = { title: "Choose a new password", robots: noIndex, alternates: { canonical: null } };
 
 // Reached from the reset email: /auth/confirm (type=recovery) signs the user in, then sends them here.
 export default async function ResetPasswordPage() {

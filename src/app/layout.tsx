@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { brand } from "@/config/brand";
+import { seo, siteUrl } from "@/config/seo";
 import "./globals.css";
 
 // TiffanyAI brand type: Space Grotesk headings, Inter body, JetBrains Mono labels.
@@ -10,9 +11,30 @@ const sans = Inter({ variable: "--font-brand-sans", subsets: ["latin"] });
 const display = Space_Grotesk({ variable: "--font-brand-display", subsets: ["latin"], weight: ["500", "600", "700"] });
 const mono = JetBrains_Mono({ variable: "--font-brand-mono", subsets: ["latin"] });
 
+// Site-wide search and sharing defaults (docs/seo-plan.md). Pages behind sign-in override robots
+// with noindex in src/app/(app)/layout.tsx.
 export const metadata: Metadata = {
-  title: { default: brand.fullName, template: `%s · ${brand.productName}` },
-  description: brand.tagline,
+  metadataBase: new URL(siteUrl),
+  title: { default: seo.title, template: `%s · ${brand.productName}` },
+  description: seo.description,
+  applicationName: brand.fullName,
+  keywords: [...seo.keywords],
+  authors: [{ name: brand.companyName, url: brand.website }],
+  creator: brand.companyName,
+  publisher: brand.companyName,
+  category: "business",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: brand.fullName,
+    title: seo.title,
+    description: seo.description,
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image", title: seo.title, description: seo.description },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

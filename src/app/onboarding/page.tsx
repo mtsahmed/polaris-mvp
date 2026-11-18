@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { noIndex } from "@/config/seo";
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/login/actions";
@@ -6,7 +7,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { createClient } from "@/lib/supabase/server";
 import { OrgForm } from "./org-form";
 
-export const metadata: Metadata = { title: "Set up your workspace" };
+export const metadata: Metadata = { title: "Set up your workspace", robots: noIndex, alternates: { canonical: null } };
 
 export default async function OnboardingPage() {
   const supabase = await createClient();

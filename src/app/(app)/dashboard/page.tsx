@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarClock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, PieChart } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { CompanyTable } from "@/components/company-table";
 import { PageHeader } from "@/components/page-header";
+import { SegmentDonut } from "@/components/segment-donut";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { STAGE_LABEL, STAGE_ORDER } from "@/lib/outreach/rules";
 import { activeProfile } from "@/lib/profile-selection";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import type { Company, PipelineStage, Prospect, Task } from "@/lib/types";
+import { segmentSlices, type CompanyRow } from "@/lib/dashboard/companies";
+import { resolveSegment, segmentOptions } from "@/lib/segments";
+import type { Company, Contact, Icp, Pitch, PipelineStage, Prospect, Task } from "@/lib/types";
 import { setStage } from "../outreach/actions";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -22,14 +27,25 @@ const TOP: PipelineStage[] = ["new_lead", "researching", "ready_to_pitch", "cont
 const BOTTOM: PipelineStage[] = ["replied", "meeting_booked", "won", "lost"];
 const SHOWN = 5;
 
-type Row = Pick<Prospect, "id" | "stage" | "decision" | "updated_at"> & { companies: Pick<Company, "name" | "domain"> | null };
+type Row = Pick<
+  Prospect,
+  "id" | "company_id" | "stage" | "decision" | "updated_at" | "created_at" | "shortlisted_at" | "notes" | "segment"
+> & { companies: Pick<Company, "name" | "domain" | "industry" | "location"> | null };
+type ContactLite = Pick<Contact, "id" | "company_id" | "email" | "email_status" | "email_unconfirmed">;
+type PitchLite = Pick<Pitch, "prospect_id" | "contact_id">;
+
+const VIEWS = [
+  { key: "main", label: "Main" },
+  { key: "table", label: "Table view" },
+] as const;
 
 // Every shortlisted company for the selected profile, by pipeline stage (roadmap section 5).
 // Stages move automatically from outreach events; a stage can also be set on a stage's full list
 // (?stage=), which is also where Won and Lost are set.
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
-  const { stage: rawStage } = await props.searchParams;
+  const { stage: rawStage, view: rawView } = await props.searchParams;
   const stage = STAGE_ORDER.find((s) => s === rawStage) ?? null;
+  const view = rawView === "table" ? "table" : "main";
 
   const { active } = await activeProfile();
   if (!active) {
@@ -43,7 +59,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const supabase = await createClient();
   const { data: rows, error } = await supabase
     .from("prospects")
-    .select("id, stage, decision, updated_at, companies ( name, domain )")
+    .select(
+      "id, company_id, stage, decision, updated_at, created_at, shortlisted_at, notes, segment, companies ( name, domain, industry, location )",
+    )
     .eq("profile_id", active.id)
     .eq("status", "saved")
     .order("updated_at", { ascending: false })
@@ -64,6 +82,68 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     return <StageList stage={stage} rows={inStage(stage)} nextTask={nextTask} today={today} profileName={active.name} />;
   }
 
+  // Segments come from the profile's ICP industries (src/lib/segments.ts).
+  const companyIds = [...new Set(prospects.map((p) => p.company_id))];
+  const [{ data: icps }, { data: contacts }, { data: firstPitches }] = await Promise.all([
+    supabase
+      .from("icps")
+      .select("industries, approved, version")
+      .eq("profile_id", active.id)
+      .order("version", { ascending: false })
+      .returns<Pick<Icp, "industries" | "approved" | "version">[]>(),
+    companyIds.length
+      ? supabase
+          .from("contacts")
+          .select("id, company_id, email, email_status, email_unconfirmed")
+          .in("company_id", companyIds)
+          .returns<ContactLite[]>()
+      : Promise.resolve({ data: [] as ContactLite[] }),
+    ids.length
+      ? supabase
+          .from("pitches")
+          .select("prospect_id, contact_id")
+          .in("prospect_id", ids)
+          .eq("kind", "first_contact")
+          .returns<PitchLite[]>()
+      : Promise.resolve({ data: [] as PitchLite[] }),
+  ]);
+  const icp = icps?.find((i) => i.approved) ?? icps?.[0] ?? null;
+  const segments = segmentOptions(icp?.industries);
+  const segmentOf = (p: Row) => p.segment ?? resolveSegment(null, p.companies?.industry, segments);
+
+  // Main email: the contact the first email goes to, else a confirmed address (verified first),
+  // else an unconfirmed one, which is marked as such.
+  const mainEmail = (p: Row) => {
+    const own = (contacts ?? []).filter((c) => c.company_id === p.company_id && c.email);
+    const pitchTo = (firstPitches ?? []).find((x) => x.prospect_id === p.id)?.contact_id;
+    const chosen =
+      own.find((c) => c.id === pitchTo) ??
+      [...own].sort(
+        (a, b) =>
+          Number(Boolean(a.email_unconfirmed)) - Number(Boolean(b.email_unconfirmed)) ||
+          Number(b.email_status === "verified") - Number(a.email_status === "verified"),
+      )[0];
+    return chosen?.email ? { email: chosen.email, unconfirmed: Boolean(chosen.email_unconfirmed) } : null;
+  };
+
+  const tableRows: CompanyRow[] = prospects.map((p) => {
+    const email = mainEmail(p);
+    return {
+      id: p.id,
+      name: p.companies?.name ?? "Company",
+      segment: segmentOf(p),
+      stage: p.stage,
+      status: STAGE_LABEL[p.stage],
+      location: p.companies?.location ?? null,
+      email: email?.email ?? null,
+      emailUnconfirmed: email?.unconfirmed ?? false,
+      notes: p.notes ?? "",
+      added: p.shortlisted_at ?? p.created_at,
+    };
+  });
+  const slices = segmentSlices(tableRows, segments);
+  const segmentList = [...new Set(tableRows.map((r) => r.segment))].sort((a, b) => a.localeCompare(b));
+
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -71,6 +151,25 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         title="Dashboard"
         description={`Every company shortlisted for ${active.name}, by stage.`}
       />
+      <nav className="mb-6 flex gap-1 shadow-[inset_0_-1px_0_var(--border)]" aria-label="Dashboard views">
+        {VIEWS.map((v) => (
+          <Link
+            key={v.key}
+            href={v.key === "main" ? "/dashboard" : "/dashboard?view=table"}
+            aria-current={view === v.key ? "page" : undefined}
+            className={cn(
+              "border-b-2 px-4 py-3 text-base font-medium transition-colors",
+              view === v.key ? "border-brand text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {v.label}
+          </Link>
+        ))}
+      </nav>
+      {view === "table" ? (
+        <CompanyTable rows={tableRows} segments={segmentList} />
+      ) : (
+        <>
       <p className={cn("mb-5 flex items-center gap-2 text-sm", due ? "font-medium text-destructive" : "text-muted-foreground")}>
         <CalendarClock className="size-4" aria-hidden="true" />
         {prospects.length} {prospects.length === 1 ? "company" : "companies"} ·{" "}
@@ -85,6 +184,21 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           </div>
         ))}
       </div>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle icon={PieChart}>Leads by industry segment</CardTitle>
+          <CardDescription className="text-base">
+            {segments.length
+              ? `Segments are the industries in the ICP of ${active.name}. A company that fits none is under Other.`
+              : `${active.name} has no ICP industries yet, so companies are grouped by their own industry.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SegmentDonut slices={slices} />
+        </CardContent>
+      </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { fetchPage } from "../fetch-page";
 import { modelDisplayName } from "../models";
 import type { ProgressSink } from "../progress";
 import { currentProgress } from "../progress-context";
-import { ProviderFailedError, ProviderUnavailableError, type ProviderAttempt, type StructuredRequest } from "../types";
+import { ProviderFailedError, ProviderUnavailableError, TIME_LIMIT_MESSAGE, type ProviderAttempt, type StructuredRequest } from "../types";
 
 // OpenAI is the fallback provider. Models are tried in this order; a model is skipped
 // only when it is unavailable (key, quota, rate limit, outage, model not enabled).
@@ -149,7 +149,7 @@ async function runOneModel<S extends z.ZodType>(
             include: ["web_search_call.action.sources" as const],
           }
         : {}),
-    });
+    }, { signal: req.signal });
     reportProgress(stream, progress);
     const response = await stream.finalResponse();
     for (const item of response.output) {
@@ -179,6 +179,7 @@ async function runOneModel<S extends z.ZodType>(
     return { data: response.output_parsed as z.infer<S>, attempt: attempt(true) };
   } catch (err) {
     if (err instanceof ProviderFailedError) throw err;
+    if (req.signal?.aborted) throw new ProviderFailedError(TIME_LIMIT_MESSAGE, attempt(false, "time limit"));
     const message = describe(err, model);
     if (isUnavailable(err)) throw new ProviderUnavailableError(message, attempt(false, message));
     throw new ProviderFailedError(message, attempt(false, message));

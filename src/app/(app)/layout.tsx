@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LogOut, Settings } from "lucide-react";
 import { AppNav, DashboardNav } from "@/components/app-nav";
@@ -18,6 +19,10 @@ import { switchOrganization } from "@/app/onboarding/actions";
 import { setModel } from "./model-actions";
 import { setActiveProfile } from "./profile-actions";
 import { requireSession } from "@/lib/session";
+import { noIndex } from "@/config/seo";
+
+// The app behind sign-in is never indexed (docs/seo-plan.md).
+export const metadata: Metadata = { robots: noIndex, alternates: { canonical: null } };
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();

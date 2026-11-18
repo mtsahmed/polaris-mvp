@@ -5,18 +5,45 @@ import { Field } from "@/components/field";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListTextarea } from "@/components/list-textarea";
 import { Textarea } from "@/components/ui/textarea";
 import { brand } from "@/config/brand";
 import type { Icp, Profile } from "@/lib/types";
 import { approveIcp, saveIcp } from "../actions";
 
+// Grey examples show while a box is empty and fade when it is clicked (owner review, 18 Nov 2026).
+// They are placeholders only, so an example can never be saved by accident.
 const LIST_FIELDS = [
-  { key: "industries", label: "Industries", hint: "Required" },
-  { key: "company_traits", label: "Company traits", hint: "Size, stage, budget signals" },
-  { key: "geographies", label: "Geographies" },
-  { key: "titles", label: "Decision-maker titles", hint: "Required" },
-  { key: "problems_addressed", label: "Problems addressed" },
+  {
+    key: "industries",
+    label: "Industries",
+    hint: "Required. The kinds of companies to approach; each line becomes a segment on the Dashboard.",
+    example: "e.g.\nDirect-to-consumer beauty brands\nIndependent music labels\nB2B software for creative teams",
+  },
+  {
+    key: "company_traits",
+    label: "Company traits",
+    hint: "Size, stage, budget signals",
+    example: "e.g.\n20–200 employees\nRaised funding in the last two years\nRuns paid social campaigns",
+  },
+  { key: "geographies", label: "Geographies", hint: "Countries, states or cities", example: "e.g.\nUnited States\nCanada" },
+  {
+    key: "titles",
+    label: "Decision-maker titles",
+    hint: "Required. Who signs off on what you offer.",
+    example: "e.g.\nHead of Marketing\nBrand Partnerships Manager\nFounder / CEO",
+  },
+  {
+    key: "problems_addressed",
+    label: "Problems addressed",
+    hint: "What they struggle with that you solve",
+    example: "e.g.\nCampaigns feel generic and underperform\nNo in-house video team\nLaunching in a new market",
+  },
 ] as const;
+
+const NOTES_EXAMPLE = "e.g.\nAssumes project budgets above $10k\nSkip agencies that compete with us";
+const FADE =
+  "placeholder:text-muted-foreground/55 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-0";
 
 // Equal, fixed-height boxes (scroll inside, drag the corner to enlarge) keep the ICP on about one screen.
 const ICP_BOX = "field-sizing-fixed h-56 resize-y text-[0.9375rem] leading-6";
@@ -69,18 +96,26 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
           <ActionForm action={saveIcp.bind(null, profile.id)} className="space-y-5" key={latest?.id ?? "new"}>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {LIST_FIELDS.map((f) => (
-                <Field key={f.key} id={f.key} label={f.label} hint={"hint" in f ? f.hint : undefined}>
-                  <Textarea
+                <Field key={f.key} id={f.key} label={f.label} hint={f.hint}>
+                  <ListTextarea
                     id={f.key}
                     name={f.key}
                     rows={5}
                     defaultValue={latest ? latest[f.key].join("\n") : f.key === "geographies" ? "United States" : ""}
+                    placeholder={f.example}
                     className={ICP_BOX}
                   />
                 </Field>
               ))}
-              <Field id="notes" label="Notes and assumptions">
-                <Textarea id="notes" name="notes" rows={5} defaultValue={latest?.notes ?? ""} className={ICP_BOX} />
+              <Field id="notes" label="Notes and assumptions" hint="Anything the search should keep in mind">
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  rows={5}
+                  defaultValue={latest?.notes ?? ""}
+                  placeholder={NOTES_EXAMPLE}
+                  className={`${ICP_BOX} ${FADE}`}
+                />
               </Field>
             </div>
 
@@ -100,7 +135,8 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                     name="excluded_geographies"
                     rows={3}
                     defaultValue={latest?.excluded_geographies?.join("\n") ?? ""}
-                    className="field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6"
+                    placeholder={"e.g.\nCanada\nMexico"}
+                    className={`field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6 ${FADE}`}
                   />
                 </Field>
                 <Field id="competitors" label="Competitors" hint="Company names, one per line">
@@ -109,7 +145,8 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                     name="competitors"
                     rows={3}
                     defaultValue={latest?.competitors?.join("\n") ?? ""}
-                    className="field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6"
+                    placeholder={"e.g.\nNorthlight Studio"}
+                    className={`field-sizing-fixed h-28 resize-y text-[0.9375rem] leading-6 ${FADE}`}
                   />
                 </Field>
                 <Field id="min_employees" label="Minimum company size" hint="Employees. Smaller companies are not a fit.">
@@ -121,6 +158,8 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                     step={1}
                     inputMode="numeric"
                     defaultValue={latest?.min_employees ?? ""}
+                    placeholder="e.g. 20"
+                    className={FADE}
                   />
                 </Field>
               </div>

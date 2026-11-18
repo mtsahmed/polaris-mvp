@@ -16,7 +16,13 @@ export type StructuredRequest<S extends z.ZodType> = {
   webSearch?: { maxUses: number };
   effort?: Effort;
   maxTokens?: number;
+  // Stops the call when it fires (for example AbortSignal.timeout), so a job ends with a clear
+  // message before the hosting time limit (300 s on Vercel) cuts it off silently.
+  signal?: AbortSignal;
 };
+
+export const TIME_LIMIT_MESSAGE =
+  "This took longer than the time limit allows, so Polaris stopped it. Try again, or ask for fewer results.";
 
 // One call to one provider, successful or not. Every attempt is written to provider_calls.
 export type ProviderAttempt = {

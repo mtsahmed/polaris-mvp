@@ -104,6 +104,17 @@
   --chart-3: oklch(0.89 0.18 95);
   --chart-4: oklch(0.55 0.08 230);
   --chart-5: oklch(0.6 0.1 155);
+  /* Dashboard segments donut (18 Nov 2026): the dataviz reference categorical palette, in its
+     fixed order; checked for colour-blind separation between neighbours. Never cycled: an
+     eighth segment onwards folds into "Other". */
+  --segment-1: #2a78d6;
+  --segment-2: #eb6834;
+  --segment-3: #1baf7a;
+  --segment-4: #eda100;
+  --segment-5: #e87ba4;
+  --segment-6: #008300;
+  --segment-7: #6250d6;
+  --segment-other: #8a8984;
   --radius: 0.875rem;
   --sidebar: oklch(0.16 0.03 265);
   --sidebar-foreground: oklch(0.97 0.004 265);
@@ -150,6 +161,14 @@
   --chart-3: oklch(0.6 0.21 355);
   --chart-4: oklch(0.7 0.08 230);
   --chart-5: oklch(0.7 0.1 155);
+  --segment-1: #3987e5;
+  --segment-2: #d95926;
+  --segment-3: #199e70;
+  --segment-4: #c98500;
+  --segment-5: #d55181;
+  --segment-6: #0ca30c;
+  --segment-7: #9085e9;
+  --segment-other: #8f8e88;
   --sidebar: oklch(0.12 0.02 265);
   --sidebar-foreground: oklch(0.97 0.005 265);
   --sidebar-primary: oklch(0.89 0.18 95);

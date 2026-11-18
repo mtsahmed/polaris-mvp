@@ -6,7 +6,16 @@ import { z } from "zod";
 import { fail, lines, ok, text, type ActionState } from "@/lib/action-state";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { QUESTIONNAIRE } from "@/lib/questionnaire";
+import {
+  formatQa,
+  mergeQa,
+  OPEN_ANSWERS_LOCATION,
+  OPEN_ANSWERS_TITLE,
+  parseQa,
+  QUESTIONNAIRE,
+  QUESTIONNAIRE_LOCATION,
+  type QaPair,
+} from "@/lib/questionnaire";
 import { writeIcp, type IcpFields } from "@/lib/icp/write";
 import { PROFILE_TYPES, type Profile } from "@/lib/types";
 
@@ -72,7 +81,8 @@ export async function createProfile(_prev: ActionState, formData: FormData): Pro
   redirect(`${profilePath(data.id)}?tab=sources`);
 }
 
-export async function updateProfile(
+// Business info tab: the Basics card only (name, type, website).
+export async function updateBusinessInfo(
   profileId: string,
   _prev: ActionState,
   formData: FormData,
@@ -92,12 +102,25 @@ export async function updateProfile(
   }
 
   const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ name, type: type.data, website }).eq("id", profileId);
+  if (error) return fail(error.message);
+
+  revalidatePath(profilePath(profileId));
+  revalidatePath("/profiles");
+  return ok("Business info saved.");
+}
+
+// Profile tab: positioning, audience, services, strengths, objectives and writing samples.
+export async function updateProfileDetails(
+  profileId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireSession();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("profiles")
     .update({
-      name,
-      type: type.data,
-      website,
       positioning: text(formData.get("positioning")),
       audience: text(formData.get("audience")),
       services: lines(formData.get("services")),
@@ -220,13 +243,18 @@ export async function saveQuestionnaire(
   const body = answered.map(({ q, a }) => `Q: ${q.label}\nA: ${a}`).join("\n\n");
   const supabase = await createClient();
 
-  // One questionnaire per profile: replace the previous answers.
-  await supabase.from("profile_sources").delete().eq("profile_id", profileId).eq("kind", "questionnaire");
+  // One questionnaire per profile: replace the previous answers (not the open-question answers).
+  await supabase
+    .from("profile_sources")
+    .delete()
+    .eq("profile_id", profileId)
+    .eq("kind", "questionnaire")
+    .eq("location", QUESTIONNAIRE_LOCATION);
   const { error } = await supabase.from("profile_sources").insert({
     org_id: session.org.id,
     profile_id: profileId,
     kind: "questionnaire",
-    location: "questionnaire",
+    location: QUESTIONNAIRE_LOCATION,
     title: "Owner questionnaire",
     extracted_text: body,
     status: "ready",
@@ -234,6 +262,47 @@ export async function saveQuestionnaire(
   if (error) return fail(error.message);
   revalidatePath(profilePath(profileId));
   return ok("Answers saved.");
+}
+
+// Answers to the insights draft's open questions, typed on the Insights tab. Kept as one source
+// ("Answers to open questions") so the next draft reads them; Sources lists it like any other.
+export async function saveOpenAnswers(profileId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await requireSession();
+  const submitted: QaPair[] = [];
+  for (let i = 0; formData.has(`question_${i}`); i++) {
+    const q = text(formData.get(`question_${i}`));
+    if (q) submitted.push({ q, a: text(formData.get(`answer_${i}`)) ?? "" });
+  }
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("profile_sources")
+    .select("extracted_text")
+    .eq("profile_id", profileId)
+    .eq("kind", "questionnaire")
+    .eq("location", OPEN_ANSWERS_LOCATION)
+    .maybeSingle<{ extracted_text: string | null }>();
+  const pairs = mergeQa(parseQa(existing?.extracted_text), submitted);
+
+  await supabase
+    .from("profile_sources")
+    .delete()
+    .eq("profile_id", profileId)
+    .eq("kind", "questionnaire")
+    .eq("location", OPEN_ANSWERS_LOCATION);
+  if (pairs.length) {
+    const { error } = await supabase.from("profile_sources").insert({
+      org_id: session.org.id,
+      profile_id: profileId,
+      kind: "questionnaire",
+      location: OPEN_ANSWERS_LOCATION,
+      title: OPEN_ANSWERS_TITLE,
+      extracted_text: formatQa(pairs),
+      status: "ready",
+    });
+    if (error) return fail(error.message);
+  }
+  revalidatePath(profilePath(profileId));
+  return ok(pairs.length ? "Answers saved. Regenerate the draft to use them." : "Answers cleared.");
 }
 
 export async function deleteSource(profileId: string, sourceId: string) {
@@ -280,7 +349,7 @@ export async function applyIntelligence(profileId: string) {
     })
     .eq("id", profileId);
   revalidatePath(profilePath(profileId));
-  redirect(`${profilePath(profileId)}?tab=overview`);
+  redirect(`${profilePath(profileId)}?tab=profile`);
 }
 
 // ---------------------------------------------------------------------------

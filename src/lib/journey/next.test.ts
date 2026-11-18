@@ -55,21 +55,26 @@ describe("profileTabAction", () => {
   const incomplete = computeJourney({ ...base, profile: { ...base.profile, positioning: "" } });
 
   test("steps through the profile tabs in order", () => {
-    expect(profileTabAction("overview", incomplete, "p1")).toMatchObject({
+    expect(profileTabAction("business", incomplete, "p1")).toMatchObject({
       label: "Next action (Sources)",
       href: "/profiles/p1?tab=sources",
       missing: null,
-      stageLabel: "Profile",
+      stageLabel: "Business info",
     });
     expect(profileTabAction("sources", incomplete, "p1")).toMatchObject({
       label: "Next action (Insights)",
       href: "/profiles/p1?tab=insights",
       missing: null,
     });
+    expect(profileTabAction("insights", incomplete, "p1")).toMatchObject({
+      label: "Next action (Profile)",
+      href: "/profiles/p1?tab=profile",
+      missing: null,
+    });
   });
 
-  test("Insights leads to the ideal customer and needs the required fields", () => {
-    const a = profileTabAction("insights", incomplete, "p1");
+  test("the Profile tab leads to the ideal customer and needs the required fields", () => {
+    const a = profileTabAction("profile", incomplete, "p1");
     expect(a.label).toBe("Next action (Ideal customer)");
     expect(a.href).toBe("/profiles/p1?tab=icp");
     expect(a.missing).toMatch(/Positioning/i);

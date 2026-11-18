@@ -1,8 +1,9 @@
 import "server-only";
 import { z } from "zod";
-import { discoverCompanies, MAX_DISCOVERY } from "@/lib/ai/discovery";
+import { DEFAULT_DISCOVERY, discoverCompanies, MAX_DISCOVERY, planDiscoveryBatches, type DiscoveryOutput } from "@/lib/ai/discovery";
 import { anyProviderConfigured } from "@/lib/ai/generate";
 import { handleAiError, logAttempts } from "@/lib/ai/log-attempts";
+import { resolveSegment, segmentOptions } from "@/lib/segments";
 import { urlKey } from "@/lib/url-key";
 import type { Icp, Profile } from "@/lib/types";
 import { done, failed, NO_PROVIDER, revalidate, type AiJob } from "./types";
@@ -28,13 +29,15 @@ const DiscoveryInput = z.object({
   count: z.coerce.number().optional(),
 });
 
+const SEARCH_TIME_LIMIT_MS = 250_000;
+
 export const discoveryJob: AiJob<typeof DiscoveryInput> = {
   input: DiscoveryInput,
   writing: "Writing up the companies found…",
   async run({ session, supabase, report }, input) {
     const profileId = input.profile_id;
     const focus = input.focus;
-    const count = Math.max(1, Math.min(MAX_DISCOVERY, input.count || 5));
+    const count = Math.max(1, Math.min(MAX_DISCOVERY, input.count || DEFAULT_DISCOVERY));
     if (!anyProviderConfigured()) return failed(NO_PROVIDER);
 
     const [{ data: profile }, { data: icps }, { data: existing }] = await Promise.all([
@@ -54,16 +57,43 @@ export const discoveryJob: AiJob<typeof DiscoveryInput> = {
     const ownDomain = profile.website ? domainOf(profile.website) : null;
     if (ownDomain) exclude.add(ownDomain);
 
+    const segments = segmentOptions(icp?.industries);
+    const batches = planDiscoveryBatches(count, segments);
+    if (batches.length > 1) report(`Searching ${batches.length} parts of the ICP at the same time…`);
+
+    // One time limit for all batches, leaving time to save the results before the 300-second cut-off.
+    const signal = AbortSignal.timeout(SEARCH_TIME_LIMIT_MS);
+    const settled = await Promise.allSettled(
+      batches.map((b) =>
+        discoverCompanies({ profile, icp, focus, count: b.ask, exclude: [...exclude], angle: b.angle, segments, signal }),
+      ),
+    );
+    const results = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+    const failures: string[] = [];
+    for (const r of settled) {
+      if (r.status === "rejected") failures.push(await handleAiError(supabase, session.org.id, "discovery", r.reason));
+    }
+    if (!results.length) return failed(failures[0] ?? "The search failed.");
+
     let added = 0;
     let dropped = 0;
     try {
-      const result = await discoverCompanies({ profile, icp, focus, count, exclude: [...exclude] });
-      await logAttempts(supabase, session.org.id, "discovery", result.attempts);
+      for (const r of results) await logAttempts(supabase, session.org.id, "discovery", r.attempts);
       report("Checking each finding's source and saving the suggestions…");
-      const seen = new Set(result.seenUrls.map(urlKey).filter(Boolean));
-      const provider = result.provider === "anthropic" ? "claude web search" : "openai web search";
+      const seen = new Set(results.flatMap((r) => r.seenUrls).map(urlKey).filter(Boolean));
 
-      for (const c of result.data.companies.slice(0, count)) {
+      // Take the batches' companies in turn (each batch lists its best first) until the count is reached.
+      const queue: { c: DiscoveryOutput["companies"][number]; provider: string; model: string }[] = [];
+      const longest = Math.max(...results.map((r) => r.data.companies.length));
+      for (let i = 0; i < longest; i++) {
+        for (const r of results) {
+          const c = r.data.companies[i];
+          if (c) queue.push({ c, provider: r.provider === "anthropic" ? "claude web search" : "openai web search", model: r.model });
+        }
+      }
+
+      for (const { c, provider, model } of queue) {
+        if (added >= count) break;
         const domain = domainOf(c.website);
         // Only findings whose link the AI really read; a company with none is not suggested.
         const signals = c.signals.filter((s) => {
@@ -84,6 +114,10 @@ export const discoveryJob: AiJob<typeof DiscoveryInput> = {
           .eq("domain", domain)
           .maybeSingle<{ id: string }>();
         let companyId = found?.id;
+        // A known company only gets its size filled in when it has none yet.
+        if (companyId && c.size.trim()) {
+          await supabase.from("companies").update({ size: c.size.trim() }).eq("id", companyId).is("size", null);
+        }
         if (!companyId) {
           const { data: company, error } = await supabase
             .from("companies")
@@ -94,6 +128,7 @@ export const discoveryJob: AiJob<typeof DiscoveryInput> = {
               website: `https://${domain}`,
               industry: c.industry.trim() || null,
               location: c.location.trim() || null,
+              size: c.size.trim() || null,
             })
             .select("id")
             .single<{ id: string }>();
@@ -138,8 +173,9 @@ export const discoveryJob: AiJob<typeof DiscoveryInput> = {
           status: "suggested",
           fit_summary: c.fit_summary.trim() || null,
           discovered_at: new Date().toISOString(),
-          discovery_model: result.model,
+          discovery_model: model,
           discovery_focus: focus,
+          segment: resolveSegment(c.segment, c.industry, segments),
         });
         if (error) throw new Error(error.message);
         added++;
@@ -156,8 +192,9 @@ export const discoveryJob: AiJob<typeof DiscoveryInput> = {
           : "The AI found no matching companies. Try a different focus.",
       );
     }
+    const partial = failures.length ? ` One of the parallel searches failed: ${failures[0]}` : "";
     return done(
-      `${added} ${added === 1 ? "company" : "companies"} suggested.`,
+      `${added} ${added === 1 ? "company" : "companies"} suggested.${partial}`,
       `/discovery?profile=${profileId}&found=${added}&dropped=${dropped}`,
     );
   },

@@ -1,13 +1,29 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { FilePenLine, MessageCircleQuestion, Quote, Sparkles } from "lucide-react";
-import { SubmitButton } from "@/components/action-form";
+import { Check, FilePenLine, MessageCircleQuestion, Quote, Sparkles } from "lucide-react";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { AiStreamForm } from "@/components/ai-stream-form";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Profile } from "@/lib/types";
-import { applyIntelligence } from "../actions";
+import { Textarea } from "@/components/ui/textarea";
+import { OPEN_ANSWERS_LOCATION, parseQa } from "@/lib/questionnaire";
+import type { Profile, ProfileIntelligence, ProfileSource } from "@/lib/types";
+import { applyIntelligence, saveOpenAnswers } from "../actions";
+
+// True when the profile already holds exactly what this draft says, so applying again would
+// change nothing (owner review, 18 Nov 2026: the button greys out until a new draft differs).
+function draftApplied(profile: Profile, intel: ProfileIntelligence) {
+  const same = (a: string | null, b: string) => (a ?? "").trim() === (b ?? "").trim();
+  const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x.trim() === b[i].trim());
+  return (
+    same(profile.positioning, intel.positioning) &&
+    same(profile.audience, intel.audience) &&
+    sameList(profile.services, intel.services) &&
+    sameList(profile.strengths, intel.strengths) &&
+    sameList(profile.objectives, intel.objectives)
+  );
+}
 
 function List({ items }: { items: string[] }) {
   if (items.length === 0) return <p className="text-base italic text-muted-foreground">Not supported by the sources</p>;
@@ -29,8 +45,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function InsightsTab({ profile, sourceCount }: { profile: Profile; sourceCount: number }) {
+export function InsightsTab({ profile, sources }: { profile: Profile; sources: ProfileSource[] }) {
   const intel = profile.intelligence;
+  const sourceCount = sources.length;
+  const openAnswers = new Map(
+    parseQa(sources.find((s) => s.kind === "questionnaire" && s.location === OPEN_ANSWERS_LOCATION)?.extracted_text).map(
+      (p) => [p.q, p.a],
+    ),
+  );
+  const applied = intel ? draftApplied(profile, intel) : false;
 
   return (
     <div className="space-y-6">
@@ -81,13 +104,20 @@ export function InsightsTab({ profile, sourceCount }: { profile: Profile; source
               <div className="space-y-3">
                 <CardTitle icon={FilePenLine}>Draft</CardTitle>
                 <CardDescription className="text-base">
-                  Applying replaces positioning, audience, services, strengths and objectives on the Profile tab,
-                  where you can still edit them.
+                  {applied
+                    ? "This draft is on the Profile tab, where you can still edit it. Regenerate the draft to apply new findings."
+                    : "Applying replaces positioning, audience, services, strengths and objectives on the Profile tab, where you can still edit them."}
                 </CardDescription>
               </div>
-              <form action={applyIntelligence.bind(null, profile.id)}>
-                <SubmitButton variant="gradient-outline" pendingLabel="Applying…">Apply to profile</SubmitButton>
-              </form>
+              {applied ? (
+                <Button variant="outline" disabled className="shrink-0">
+                  <Check /> Applied to profile
+                </Button>
+              ) : (
+                <form action={applyIntelligence.bind(null, profile.id)}>
+                  <SubmitButton variant="gradient-outline" pendingLabel="Applying…">Apply to profile</SubmitButton>
+                </form>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
@@ -116,21 +146,46 @@ export function InsightsTab({ profile, sourceCount }: { profile: Profile; source
             </CardContent>
           </Card>
 
-          {/* 3. Open questions */}
+          {/* 3. Open questions: answered here (owner review, 18 Nov 2026), saved as a source. */}
           {intel.gaps.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle icon={MessageCircleQuestion}>Open questions</CardTitle>
-                <CardDescription className="text-base">
-                  The sources do not answer these. Add a source or answer them in the questionnaire.
+                <CardDescription className="text-base leading-relaxed">
+                  The sources do not answer these. Type what you know below and save: the answers become a source
+                  called &ldquo;Answers to open questions&rdquo; on the Sources tab. Then regenerate the draft so it uses them.
+                  You can also add a link or file on the{" "}
+                  <Link href={`/profiles/${profile.id}?tab=sources`} className="font-medium text-brand underline-offset-4 hover:underline">
+                    Sources tab
+                  </Link>
+                  .
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="grid list-disc gap-x-10 gap-y-2 pl-5 text-base leading-relaxed md:grid-cols-2">
-                  {intel.gaps.map((g) => (
-                    <li key={g}>{g}</li>
-                  ))}
-                </ul>
+                <ActionForm action={saveOpenAnswers.bind(null, profile.id)} className="space-y-5">
+                  <div className="grid gap-x-8 gap-y-5 md:grid-cols-2">
+                    {intel.gaps.map((g, i) => (
+                      <div key={g} className="space-y-2">
+                        <label htmlFor={`answer_${i}`} className="flex items-start gap-2 text-base leading-snug font-medium">
+                          <span>{g}</span>
+                          {openAnswers.has(g) && (
+                            <Badge className="shrink-0 bg-success/15 text-success">Answered</Badge>
+                          )}
+                        </label>
+                        <input type="hidden" name={`question_${i}`} value={g} />
+                        <Textarea
+                          id={`answer_${i}`}
+                          name={`answer_${i}`}
+                          rows={2}
+                          defaultValue={openAnswers.get(g) ?? ""}
+                          placeholder="Your answer (leave empty to skip)"
+                          className="placeholder:transition-opacity focus:placeholder:opacity-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <SubmitButton variant="gradient-outline" pendingLabel="Saving…">Save answers</SubmitButton>
+                </ActionForm>
               </CardContent>
             </Card>
           )}

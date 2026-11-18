@@ -91,3 +91,32 @@ are in `src/components/polaris-working.tsx`.
 - **In a list** (a company still researching): `<SpinningStar />` before the status word.
 - The star rotates once every 2.4 seconds. With the system's reduce-motion setting it pulses instead
   (`.polaris-spin` in `globals.css`).
+
+## Profile tabs
+
+Agreed 18 November 2026 (end-to-end review). Order: Business info (the Basics card only), Sources,
+Insights, Profile (positioning and writing samples), ICP. A step that applies AI output moves the user
+to the tab where it lands (Apply to profile opens Profile). Once applied, the button becomes a
+disabled `outline` button with a check ("Applied to profile") until a new draft differs.
+
+## Example text in form fields
+
+Empty list fields show a grey example as the placeholder, starting with "e.g.", that fades out when
+the field gets focus (`ListTextarea`, `src/components/list-textarea.tsx`). Examples are never saved
+and never shown as data. List fields show a live "N items" count.
+
+## Collapsed result cards
+
+Agreed 18 November 2026. Where a page lists many AI results (Discovery suggestions), every card is
+collapsed to one line (name, segment badge, size and location when known) with a down chevron to
+open it. No separate summary table above the cards (tried and removed the same day: it repeated the
+cards).
+
+## Charts
+
+- Industry segments use the categorical tokens `--segment-1` to `--segment-7` and `--segment-other`
+  in `globals.css` (validated palette, separate light and dark steps). Colours are given in fixed
+  order and follow the segment, never its rank; an eighth segment folds into Other.
+- Donuts (`SegmentDonut`) have a 2px gap between slices, the total in the centre, and a legend with
+  each count and share. A table view of the same data is always one click away (Dashboard Table view).
+

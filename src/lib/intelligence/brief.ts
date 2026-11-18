@@ -208,11 +208,17 @@ ${input.notes ? `\nNotes from the user (leads, not facts):\n${input.notes}\n` : 
     schema: BriefSchema,
     schemaName: "intelligence_brief",
     urls: input.company.website ? [{ label: "W1", url: input.company.website }] : undefined,
-    maxSearches: 6,
-    effort: "high",
+    // End-to-end review (18 Nov 2026): briefs took about two minutes. Medium effort and five
+    // searches cut the thinking time; the time limit stops a slow run cleanly before Vercel's
+    // 300-second cut-off instead of leaving the brief stuck in "researching".
+    maxSearches: 5,
+    effort: "medium",
     maxTokens: 16000,
+    signal: AbortSignal.timeout(BRIEF_TIME_LIMIT_MS),
   });
 }
+
+const BRIEF_TIME_LIMIT_MS = 270_000;
 
 function existingText(existing: ExistingSignal[]) {
   return existing

@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MAX_DISCOVERY } from "@/lib/ai/discovery";
+import { DEFAULT_DISCOVERY, DISCOVERY_COUNTS } from "@/lib/ai/discovery";
 import { modelDisplayName } from "@/lib/ai/models";
 import { cleanHref, hostOf } from "@/lib/rich-text";
+import { resolveSegment, segmentOptions } from "@/lib/segments";
 import { activeProfile } from "@/lib/profile-selection";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -99,6 +100,8 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
   }
   if (error) throw new Error(error.message);
   const icp = icps?.find((i) => i.approved) ?? icps?.[0] ?? null;
+  const segments = segmentOptions(icp?.industries);
+  const segmentOf = (r: Row) => r.segment ?? resolveSegment(null, r.companies?.industry, segments);
 
   const companyIds = [...new Set((rows ?? []).map((r) => r.company_id))];
   const { data: signalRows } = companyIds.length
@@ -126,7 +129,7 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
           <CardHeader>
             <CardTitle icon={Compass}>Find companies</CardTitle>
             <CardDescription className="text-base">
-              A run takes two to four minutes and is logged in Usage &amp; cost.
+              A run searches several parts of the ICP at once, takes two to four minutes and is logged in Usage &amp; cost.
             </CardDescription>
           </CardHeader>
           <CardContent className={SCROLL_INSIDE}>
@@ -159,9 +162,9 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
               >
                 <Input id="focus" name="focus" autoComplete="off" placeholder="sector, city or trait" />
               </Field>
-              <Field id="count" label="How many companies:" hint={`Up to ${MAX_DISCOVERY}. Fewer is faster and cheaper.`}>
-                <NativeSelect id="count" name="count" defaultValue="5">
-                  {[3, 5, 8].map((n) => (
+              <Field id="count" label="How many companies:" hint="More companies cost more; the time stays about the same.">
+                <NativeSelect id="count" name="count" defaultValue={String(DEFAULT_DISCOVERY)}>
+                  {DISCOVERY_COUNTS.map((n) => (
                     <option key={n} value={n}>
                       {n}
                     </option>
@@ -249,11 +252,15 @@ export default async function DiscoveryPage(props: PageProps<"/discovery">) {
             Run a search above. Suggested companies appear here for you to shortlist or dismiss.
           </p>
         ) : (
-          <div className={cn("grid max-h-[44rem] gap-5 overflow-y-auto rounded-3xl p-1 pr-2", suggested.length > 1 && "lg:grid-cols-2")}>
-            {suggested.map((r) => (
-              <Suggestion key={r.id} row={r} signals={signalsOf(r.company_id)} />
-            ))}
-          </div>
+          suggested.length > 0 && (
+            <div className="space-y-6">
+              <div className="space-y-3">
+                {suggested.map((r) => (
+                  <Collapsed key={r.id} row={r} segment={segmentOf(r)} signals={signalsOf(r.company_id)} />
+                ))}
+              </div>
+            </div>
+          )
         )}
 
         {added.length > 0 && (
@@ -280,6 +287,31 @@ function IcpLine({ label, items }: { label: string; items: string[] }) {
       <div className="text-sm font-semibold">{label}</div>
       <div className="text-muted-foreground">{items.join(" · ")}</div>
     </div>
+  );
+}
+
+// A suggestion collapsed to one line; the arrow opens its full card with the findings and the
+// Shortlist and Dismiss buttons. The summary table above the cards was removed in the owner
+// review of 18 Nov 2026; the line carries segment, size and location instead.
+function Collapsed({ row, segment, signals }: { row: Row; segment: string; signals: Signal[] }) {
+  const company = row.companies;
+  if (!company) return null;
+  return (
+    <details id={`suggestion-${row.id}`} className="group scroll-mt-24 rounded-3xl border bg-card shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-2 px-6 py-4 [&::-webkit-details-marker]:hidden">
+        <span className="font-heading text-lg font-semibold tracking-tight">{company.name}</span>
+        <Badge variant="secondary">{segment}</Badge>
+        {company.size && <span className="text-sm text-muted-foreground">{company.size}</span>}
+        {company.location && <span className="text-sm text-muted-foreground">{company.location}</span>}
+        <span className="ml-auto flex items-center">
+          <ChevronDown className="size-5 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+          <span className="sr-only">Show details</span>
+        </span>
+      </summary>
+      <div className="border-t p-1">
+        <Suggestion row={row} signals={signals} bare />
+      </div>
+    </details>
   );
 }
 
@@ -350,6 +382,7 @@ function Suggestion({ row, signals, bare = false }: { row: Row; signals: Signal[
           {website && <SourceChip href={website} host={company.domain ?? hostOf(website)} />}
           {company.industry && <Badge variant="secondary">{company.industry}</Badge>}
           {company.location && <Badge variant="secondary">{company.location}</Badge>}
+          {company.size && <Badge variant="secondary">{company.size}</Badge>}
         </div>
         {!siteSeen && (
           <p className="text-[13px] text-muted-foreground/75 italic">

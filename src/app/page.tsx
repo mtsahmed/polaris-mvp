@@ -1,4 +1,5 @@
 import { brand } from "@/config/brand";
+import { seo, siteUrl } from "@/config/seo";
 import { createClient } from "@/lib/supabase/server";
 import { ImpactCalculator } from "@/components/impact-calculator";
 import { ImpactReportForm } from "@/components/impact-report-form";
@@ -15,6 +16,29 @@ const POINTS = [
   "Approved outreach",
   "Pipeline",
 ];
+
+// Structured data for search engines (docs/seo-plan.md): the organisation and the product.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${brand.website}#organization`,
+      name: brand.companyName,
+      url: brand.website,
+      email: brand.contactEmail,
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: brand.fullName,
+      url: `${siteUrl}/`,
+      description: seo.description,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      publisher: { "@id": `${brand.website}#organization` },
+    },
+  ],
+};
 
 // Public landing page: what Polaris is, then the animated route map (public/how-it-works.html).
 // Signed-in users can open it from the logo; its header button then leads back into the app.
@@ -34,6 +58,11 @@ export default async function Home() {
         </>
       }
     >
+      <script
+        type="application/ld+json"
+        // Only our own constants (brand and seo config), never user text, so nothing can close the tag.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <section className="relative px-5 pb-6 pt-12 sm:px-8 lg:pt-16">
         <div className="relative mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <div className="space-y-6">
