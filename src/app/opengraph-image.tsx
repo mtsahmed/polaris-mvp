@@ -36,14 +36,14 @@ export default function OpengraphImage() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.08, letterSpacing: -1.5 }}>
-            Find the right partners and customers, with every claim sourced.
+            Find the B2B partners worth pitching.
           </div>
           <div style={{ fontSize: 30, color: "#c9c3e6" }}>
-            Profile → ideal customer → cited research → contacts → approved outreach
+            Design and automate your pitches and multi-channel outreach with frontier AI models.
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 24, color: "#ffd700", letterSpacing: 4, textTransform: "uppercase" }}>
-          Partnership intelligence
+          B2B partnership &amp; GTM intelligence
         </div>
       </div>
     ),

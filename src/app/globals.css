@@ -210,7 +210,10 @@
     background-image: var(--brand-gradient);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
+    /* The fill is transparent so the gradient shows; color stays solid so contrast checkers
+       (Lighthouse / axe) and forced-colors mode read a real colour (owner review, 19 Nov 2026). */
+    -webkit-text-fill-color: transparent;
+    color: inherit;
   }
   .bg-brand-gradient {
     background-image: var(--brand-gradient);
@@ -267,5 +270,31 @@
 @media (prefers-reduced-motion: reduce) {
   .polaris-spin {
     animation: polaris-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+/* Public legal pages (src/app/(legal)): readable long-form text on the dark landing frame. */
+@layer components {
+  .legal h1 {
+    @apply mb-2 text-4xl font-semibold tracking-tight text-sidebar-foreground;
+  }
+  .legal h2 {
+    @apply mt-10 mb-3 text-2xl font-semibold tracking-tight text-sidebar-foreground;
+  }
+  .legal p,
+  .legal li {
+    @apply text-[17px] leading-relaxed text-sidebar-foreground/85;
+  }
+  .legal p + p {
+    @apply mt-3;
+  }
+  .legal ul {
+    @apply my-3 list-disc space-y-1.5 pl-6;
+  }
+  .legal a {
+    @apply text-sidebar-foreground underline underline-offset-4;
+  }
+  .legal strong {
+    @apply font-semibold text-sidebar-foreground;
   }
 }

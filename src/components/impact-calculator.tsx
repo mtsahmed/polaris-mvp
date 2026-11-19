@@ -121,7 +121,7 @@ export function ImpactCalculator() {
       <div className="mx-auto max-w-[1120px] space-y-8">
         <header className="space-y-4">
           <div className="kicker text-gold">Business impact</div>
-          <h2 id="impact-title" className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 id="impact-title" className="text-3xl font-semibold text-sidebar-foreground tracking-tight text-balance sm:text-4xl">
             What Polaris could mean for <span className="text-gradient">your pipeline</span>
           </h2>
           <p className="max-w-3xl text-lg leading-relaxed text-sidebar-foreground/80">

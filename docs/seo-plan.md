@@ -18,6 +18,10 @@ sign-in stays out of them, and is also private by design.
 | `noindex` on private pages | `src/app/(app)/layout.tsx`, login, onboarding, reset password | `noindex, follow`, and no canonical link. |
 | Search files reachable when signed out | `PUBLIC_PATHS` in `src/lib/supabase/proxy-session.ts` | Without this the proxy sends crawlers to the sign-in page. |
 | One `h1` per page, `lang="en"`, semantic `main` | Existing layout | Checked. |
+| Title and description (owner's wording, 19 Nov 2026) | `src/config/seo.ts` | Title "Polaris by TiffanyAI: B2B Partnership & GTM Intelligence" (short, since search results cut at about 60 characters); the full positioning sentence is the description, share text, manifest, JSON-LD and llms.txt summary. Page titles use `Page · Polaris by TiffanyAI`. |
+| `llms.txt` for AI agents | `src/app/llms.txt/route.ts`, text in `src/lib/agents/discovery.ts` | H1, summary blockquote and link lists (llmstxt.org). |
+| Agent catalog (ARD) | `/.well-known/ai-catalog.json` and `/.well-known/ard.json` (same manifest), `<link rel="ai-catalog">` / `rel="ard"` on the landing page | `specVersion` 1.0, one entry pointing at llms.txt. Lighthouse 13.5 reads the ai-catalog path; the current spec uses ard.json. Add entries if Polaris ever offers an MCP server or public API. |
+| Privacy policy and Terms of service | `/privacy`, `/terms` (`src/app/(legal)/`), in the sitemap and the landing footer | Drafts for the owner's review (19 Nov 2026); set `DRAFT` to false in `draft-notice.tsx` once approved. |
 
 ## Before go-live (deployment plan step 2 onwards)
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, LogIn, Moon, Sun } from "lucide-react";
 import { BrandMark, StarIcon } from "@/components/brand-mark";
 import { HowItWorksEmbed } from "@/components/how-it-works-embed";
+import { LandingFooter } from "@/components/landing-footer";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +113,7 @@ export function LandingShell({
 
       <HowItWorksEmbed src={after ? "/how-it-works.html?nodiff=1" : "/how-it-works.html"} theme={theme} className="relative" fixed />
       {after}
+      <LandingFooter />
     </main>
   );
 }

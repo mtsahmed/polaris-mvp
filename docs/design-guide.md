@@ -112,6 +112,27 @@ collapsed to one line (name, segment badge, size and location when known) with a
 open it. No separate summary table above the cards (tried and removed the same day: it repeated the
 cards).
 
+## Landing feature cards
+
+Agreed 19 November 2026 (owner's reference image `docs/Reference-image-for-showing-bullet-text-on-landing-page.png`).
+The eight steps of Polaris sit under the heading "What Polaris Does" as cards (the "Your AI SDR"
+quotation is on the right of the hero): 4 columns on wide screens,
+2 on tablets, 1 on phones. Each card: a 22px gold `lucide-react` outline icon with the step number
+(mono, `01`–`08`) on the right, a semibold 17px title, and one short muted sentence (15px). Card
+surface `bg-sidebar-accent/40`, `border-sidebar-border`, rounded 2xl; the border warms to gold on
+hover. Keep each sentence true to what Polaris does today.
+
+## Landing page footer
+
+Agreed 19 November 2026. Every public page (landing, privacy, terms) ends with `LandingFooter`
+(`src/components/landing-footer.tsx`): brand mark, email, corporate website, Instagram, Privacy policy
+and Terms links, the copyright line and the TiffanyAI QR code on a white tile. Contact details come
+from `src/config/brand.ts`.
+
+On the route map (`public/how-it-works.html`) Previous step and Next step are the same small
+gradient-outline button (13px, no gradient fill); only the Sign in call to action uses the filled
+gradient.
+
 ## Charts
 
 - Industry segments use the categorical tokens `--segment-1` to `--segment-7` and `--segment-other`

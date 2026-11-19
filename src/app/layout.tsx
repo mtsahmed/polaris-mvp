@@ -15,7 +15,7 @@ const mono = JetBrains_Mono({ variable: "--font-brand-mono", subsets: ["latin"] 
 // with noindex in src/app/(app)/layout.tsx.
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: seo.title, template: `%s · ${brand.productName}` },
+  title: { default: seo.title, template: `%s · ${brand.fullName}` },
   description: seo.description,
   applicationName: brand.fullName,
   keywords: [...seo.keywords],

@@ -36,6 +36,7 @@ h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.2}
 .intro p{color:var(--muted);font-size:20px;line-height:1.6;max-width:32em}
 .lead{display:flex;justify-content:space-between;align-items:center;gap:16px 32px;flex-wrap:wrap}
 .eyebrow{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.intro .eyebrow{margin:20px 0}
 .progress{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:15px}
 .bar{flex:1;min-width:160px;max-width:320px;height:8px;border-radius:8px;background:var(--night-3);overflow:hidden}
 .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--magenta));transition:width .4s}
@@ -77,6 +78,8 @@ h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.2}
 .extra h3{color:var(--magenta)}
 .tag{align-self:flex-start;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:99px;border:1px solid var(--muted);color:var(--muted)}
 .nav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:auto}
+/* Previous / Next step: half size, gradient outline only (owner review, 19 Nov 2026). */
+.nav .btn{padding:4px 10px;font-size:13px;border-width:1.5px}
 main.measuring,main.measuring *{transition:none!important;animation:none!important}
 .panel.sizing{overflow:hidden}
 section.cta{flex-direction:row;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;margin:40px 0 20px;padding:8px 0}
@@ -204,7 +207,7 @@ html.light #cur svg path{fill:#0f1424;stroke:#fff}
     </div>
     <div class="nav">
       <button class="btn" id="prev" type="button">Previous step</button>
-      <button class="btn primary" id="next" type="button">Next step</button>
+      <button class="btn" id="next" type="button">Next step</button>
     </div>
   </article>
 

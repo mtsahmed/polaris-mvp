@@ -9,20 +9,27 @@ import { brand } from "./brand";
 export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 export const seo = {
-  title: `${brand.fullName}: partnership and customer prospecting with sourced research`,
+  // Owner's wording, 19 November 2026: a short title (search results cut titles at about 60
+  // characters) and the full positioning sentence as the description everywhere.
+  title: `${brand.fullName}: B2B Partnership & GTM Intelligence`,
   description:
-    "Polaris turns a business or talent profile into an ideal customer profile, finds companies that fit, researches each one with cited sources, finds decision-makers and drafts outreach you approve before it is sent.",
+    "Polaris by TiffanyAI is a SalesTech platform for B2B partnership & GTM intelligence with multi-channel outreach. Find the B2B partners worth pitching. Design and automate your pitches and multi-channel outreach using the frontier AI models.",
   keywords: [
     "partnership prospecting",
     "B2B prospecting",
+    "B2B sales intelligence",
     "ideal customer profile",
-    "account research",
+    "company research",
     "sales intelligence",
     "brand partnerships",
     "sponsorship outreach",
     "AI sales research",
     "cited research",
     "outreach drafts",
+    "SalesTech",
+    "GTM intelligence",
+    "AI SDR",
+    "multi-channel outreach",
   ],
   // Pages that never belong in search results: the signed-in app, auth steps and APIs.
   privatePaths: [

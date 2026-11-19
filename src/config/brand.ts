@@ -7,4 +7,6 @@ export const brand = {
   tagline: "From profile to pipeline, with every claim sourced.",
   website: "https://tiffanyaisys.com",
   contactEmail: "info@tiffanyaisys.com",
+  legalName: "TiffanyAI Systems",
+  instagram: "ahm.edmuhammadd",
 } as const;

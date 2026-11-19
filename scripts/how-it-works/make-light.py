@@ -49,6 +49,7 @@ h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.25}
 .intro p{color:var(--muted);font-size:16px;max-width:62ch}
 .lead{display:flex;justify-content:space-between;align-items:center;gap:16px 32px;flex-wrap:wrap}
 .eyebrow{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--brand)}
+.intro .eyebrow{margin:20px 0}
 .progress{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:15px}
 .bar{flex:1;min-width:160px;max-width:320px;height:8px;border-radius:8px;background:var(--line);overflow:hidden}
 .bar span{display:block;height:100%;width:0;background:var(--gradient);transition:width .4s}
@@ -89,6 +90,7 @@ h3{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.25}
 .extra h3{color:var(--brand)}
 .tag{align-self:flex-start;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted);background:var(--card)}
 .nav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:auto}
+.nav .btn{padding:4px 10px;font-size:13px;border-width:1.5px}
 main.measuring,main.measuring *{transition:none!important;animation:none!important}
 .panel.sizing{overflow:hidden}
 .btn{font:inherit;font-weight:600;padding:8px 16px;border-radius:99px;border:2px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--gradient-button) border-box;color:var(--ink);cursor:pointer}

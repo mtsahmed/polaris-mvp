@@ -16,6 +16,10 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   "/manifest.webmanifest",
   "/opengraph-image",
+  "/llms.txt",
+  "/.well-known",
+  "/privacy",
+  "/terms",
 ];
 
 // Refreshes the Supabase session on every request and keeps signed-out users on public pages.

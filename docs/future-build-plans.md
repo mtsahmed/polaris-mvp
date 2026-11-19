@@ -23,3 +23,13 @@ Recorded 17 November 2026. The calculator is `src/components/impact-calculator.t
 - **Email the PDF to the visitor** through the Hostinger SMTP setup, which also confirms the
   address is real.
 - **A short privacy notice** linked from the report form before launch, since it collects emails.
+
+## Automated outreach through Instantly (noted 19 November 2026)
+
+Automated multi-channel outreach will be done through Instantly (roadmap: Hypergrowth plan, behind the
+`OutreachProvider` adapter). The landing page already describes Polaris as a "Multi-channel automated
+outreach platform" (card 07 in `src/app/page.tsx`). When sending through Instantly is built:
+
+- Update the Terms of service (section 2, "Polaris does not send messages itself") and the Privacy policy
+  (sections 2 and 4: Instantly would then receive message content and recipients).
+- Keep the roadmap rule that a named person approves every message before it is pushed to Instantly.

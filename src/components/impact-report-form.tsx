@@ -65,7 +65,7 @@ export function ImpactReportForm() {
       <div className="mx-auto grid max-w-[1120px] gap-8 rounded-3xl border border-sidebar-border bg-sidebar-accent/40 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:p-10">
         <div className="space-y-5">
           <div className="kicker text-gold">Free one-page report</div>
-          <h2 id="report-title" className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 id="report-title" className="text-3xl font-semibold text-sidebar-foreground tracking-tight text-balance sm:text-4xl">
             Take your scenario to <span className="text-gradient">your next meeting</span>
           </h2>
           <p className="text-lg leading-relaxed text-sidebar-foreground/80">
@@ -92,7 +92,7 @@ export function ImpactReportForm() {
             <div className="space-y-4 text-center" role="status">
               <FileText className="mx-auto size-10 text-brand" aria-hidden="true" />
               <div className="space-y-1">
-                <h3 className="text-xl font-semibold tracking-tight">Your report is ready{ready.name ? `, ${ready.name}` : ""}</h3>
+                <h3 className="text-xl font-semibold tracking-tight text-sidebar-foreground">Your report is ready{ready.name ? `, ${ready.name}` : ""}</h3>
                 <p className="text-[0.9375rem] text-sidebar-foreground/75">One page, US Letter, with your current numbers.</p>
               </div>
               <a
