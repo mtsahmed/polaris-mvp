@@ -82,27 +82,28 @@ export function LandingShell({
       />
       <header
         className={cn(
-          "sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-sidebar-border bg-sidebar/95 px-5 py-3 backdrop-blur transition-transform duration-300 focus-within:translate-y-0 sm:px-8 motion-reduce:transition-none",
+          "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar/95 px-4 py-3 backdrop-blur transition-transform duration-300 focus-within:translate-y-0 sm:px-8 motion-reduce:transition-none",
           headerHidden && "-translate-y-full",
         )}
       >
         <BrandMark size="lg" />
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggle}
             aria-label={light ? "Switch to dark background" : "Switch to light background"}
             title={light ? "Dark background" : "Light background"}
-            className="grid size-10 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent/60 text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent/60 text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             {light ? <Moon className="size-[18px]" /> : <Sun className="size-[18px]" />}
           </button>
           {signedIn ? (
-            <Link href="/profiles" className={buttonVariants({ variant: "brand" })}>
-              Open Polaris <ArrowRight />
+            // Phones show "Open" only, so the header fits a 360px screen (owner review, 19 Nov 2026).
+            <Link href="/profiles" aria-label="Open Polaris" className={buttonVariants({ variant: "brand", className: "max-sm:px-3.5" })}>
+              Open<span className="max-sm:hidden">Polaris</span> <ArrowRight />
             </Link>
           ) : (
-            <Link href="/login" className={buttonVariants({ variant: "brand" })}>
+            <Link href="/login" className={buttonVariants({ variant: "brand", className: "max-sm:px-3.5" })}>
               <LogIn /> Sign in
             </Link>
           )}

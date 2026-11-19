@@ -33,16 +33,17 @@ export function BrandMark({
   className?: string;
   textClassName?: string; // e.g. hidden when the app sidebar is collapsed
   subtitle?: boolean;
-  // "lg" is the landing-page header: a 48px wordmark with the subtitle under it.
+  // "lg" is the landing-page header: a 48px wordmark and star with the subtitle under it; 42px on
+  // phones so the header fits (owner review, 19 Nov 2026).
   size?: "default" | "lg";
 }) {
   const lg = size === "lg";
   return (
-    <div className={cn("flex", lg ? "items-start gap-4" : "items-center gap-3", className)}>
-      <StarIcon className={lg ? "size-12" : "size-7"} />
+    <div className={cn("flex", lg ? "min-w-0 items-start gap-3 sm:gap-4" : "items-center gap-3", className)}>
+      <StarIcon className={lg ? "size-[42px] shrink-0 sm:size-12" : "size-7"} />
       <div className={cn("leading-none", textClassName)}>
         <div
-          className={cn("font-heading font-semibold tracking-tight", lg ? "text-[48px] leading-none" : "text-2xl")}
+          className={cn("font-heading font-semibold tracking-tight", lg ? "text-[42px] leading-none sm:text-[48px]" : "text-2xl")}
           style={lg ? { fontFamily: "var(--font-brand-display), 'Space Grotesk', sans-serif", fontWeight: 600 } : undefined}
         >
           {brand.productName}
