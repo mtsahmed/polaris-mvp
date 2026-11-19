@@ -245,7 +245,8 @@
   --sidebar-accent: oklch(0.95 0.006 265);
   --sidebar-accent-foreground: oklch(0.17 0.03 265);
   --sidebar-border: oklch(0.9 0.008 265);
-  --gold: oklch(0.6 0.13 80);
+  /* Deep enough for 4.5:1 small-text contrast on the light page (5.3:1) and its cards (4.9:1); Lighthouse, 19 Nov 2026. */
+  --gold: oklch(0.52 0.115 75);
 }
 .landing-light .landing-glow {
   opacity: 0.12;
