@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/manifest.webmanifest",
   "/opengraph-image",
   "/llms.txt",
+  "/BingSiteAuth.xml", // Bing Webmaster Tools site verification (public/BingSiteAuth.xml)
   "/.well-known",
   "/privacy",
   "/terms",
