@@ -131,7 +131,8 @@ export default async function UsagePage(props: PageProps<"/usage">) {
   }
 
   const nameOf = (id: string | null) => {
-    const p = id ? personById.get(id) : undefined;
+    if (!id) return "Deleted user";
+    const p = personById.get(id);
     if (!p) return scope === "all" ? "Deleted user or unknown" : "Former member or unknown";
     return p.full_name?.trim() || p.email || "Unnamed user";
   };
@@ -223,7 +224,7 @@ export default async function UsagePage(props: PageProps<"/usage">) {
             const p = personById.get(id);
             return {
               key: id,
-              name: `${id === UNKNOWN ? nameOf(null) : nameOf(id)}${id === session.userId ? " (you)" : ""}`,
+              name: `${id === UNKNOWN ? (scope === "all" ? "Deleted user or unknown" : "Deleted user or former member") : nameOf(id)}${id === session.userId ? " (you)" : ""}`,
               detail: p?.full_name && p.email ? p.email : undefined,
               second: p?.role ? ROLE_LABEL[p.role] : "—",
               totals: t,

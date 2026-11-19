@@ -23,8 +23,8 @@ sign-in stays out of them, and is also private by design.
 
 1. **Set `NEXT_PUBLIC_SITE_URL` on Vercel** to the live address (for example `https://polaris.tiffanyaisys.com`). Canonical links, the sitemap and the share image all use it; left unset they point at localhost.
 2. **Keep preview deployments out of search.** Vercel adds `X-Robots-Tag: noindex` to preview URLs by default; check it is still on.
-3. **Google Search Console and Bing Webmaster Tools:** verify the domain (DNS record), submit `/sitemap.xml`, then check the landing page with the URL inspection tool.
-4. **Check the share preview** with LinkedIn Post Inspector and the X card validator once the domain is live.
+3. **Google Search Console and Bing Webmaster Tools:** verify the domain (DNS record), submit `/sitemap.xml`, then check the landing page with the URL inspection tool. *Google: domain verified by DNS and sitemap submitted 19 November 2026. Bing: waiting until Google shows the site as indexed, then import it from Search Console.*
+4. **Check the share preview** with LinkedIn Post Inspector and the X card validator once the domain is live. *Done 19 November 2026: LinkedIn shows the share image, title and description.*
 5. **Run Lighthouse** (Chrome DevTools) on the live landing page and fix anything under 90 for Performance, Accessibility, Best practices and SEO.
 
 ## Later, when there is time for content

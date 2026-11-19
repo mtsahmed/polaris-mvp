@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Users } from "lucide-react";
 import { AppNav, DashboardNav } from "@/components/app-nav";
 import { BrandMark } from "@/components/brand-mark";
 import { SidebarShell, SidebarToggle } from "@/components/sidebar-shell";
@@ -18,7 +18,7 @@ import { signOut } from "@/app/login/actions";
 import { switchOrganization } from "@/app/onboarding/actions";
 import { setModel } from "./model-actions";
 import { setActiveProfile } from "./profile-actions";
-import { requireSession } from "@/lib/session";
+import { isAppAdmin, requireSession } from "@/lib/session";
 import { noIndex } from "@/config/seo";
 
 // The app behind sign-in is never indexed (docs/seo-plan.md).
@@ -26,6 +26,7 @@ export const metadata: Metadata = { robots: noIndex, alternates: { canonical: nu
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
+  const appAdmin = await isAppAdmin();
   const model = await selectedModelId();
   const { profiles, active } = await activeProfile();
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
@@ -77,6 +78,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           >
             <Settings className="size-3.5" /> Workspace settings
           </Link>
+          {appAdmin && (
+            <Link
+              href="/admin/users"
+              className="mt-1 flex items-center gap-1.5 text-[11px] text-sidebar-foreground/80 hover:text-sidebar-foreground"
+            >
+              <Users className="size-3.5" /> Users (Polaris admin)
+            </Link>
+          )}
         </div>
 
         <div className="relative -my-1">

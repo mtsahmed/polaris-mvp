@@ -27,6 +27,7 @@ export const seo = {
   // Pages that never belong in search results: the signed-in app, auth steps and APIs.
   privatePaths: [
     "/api/",
+    "/admin",
     "/auth/",
     "/dashboard",
     "/profiles",

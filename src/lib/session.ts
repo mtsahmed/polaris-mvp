@@ -53,3 +53,10 @@ export const requireSession = cache(async (): Promise<SessionContext> => {
     orgs,
   };
 });
+
+// Polaris app admin (table platform_admins, checked in the database). Cached per request.
+export const isAppAdmin = cache(async (): Promise<boolean> => {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("is_platform_admin");
+  return data === true;
+});
