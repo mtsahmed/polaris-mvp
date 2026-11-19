@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Lightbulb, Mail, MessageCircleQuestion, NotebookPen, RefreshCw, Search, Sparkles } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { AiStreamForm } from "@/components/ai-stream-form";
+import { conceptsUpToDate, emailUpToDate, researchUpToDate } from "@/lib/reruns";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { NextAction } from "@/components/next-action";
 import { FollowProfile } from "@/components/profile-switcher";
@@ -136,7 +137,12 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
               note="This takes a minute or two. If you leave, the research still finishes and is saved."
               className="mt-4 shrink-0 sm:mt-0"
             >
-              <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
+              <SubmitButton
+                variant="gradient-outline"
+                working
+                pendingLabel="Researching…"
+                upToDate={researchUpToDate(prospect.researched_at)}
+              >
                 <RefreshCw /> {prospect.researched_at ? "Refresh research" : "Research company"}
               </SubmitButton>
             </AiStreamForm>
@@ -226,9 +232,15 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                   label="Your notes:"
                   hint="Used as context for concepts and emails, never quoted as research."
                 >
-                  <Textarea id="notes" name="notes" rows={6} defaultValue={prospect.notes ?? ""} />
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    rows={6}
+                    defaultValue={prospect.notes ?? ""}
+                    placeholder="e.g. Met their brand lead at SXSW; they want creator content for a Q2 launch. Avoid paid-media angles."
+                  />
                 </Field>
-                <SubmitButton variant="gradient-outline">
+                <SubmitButton variant="gradient-outline" requireChanges>
                   <NotebookPen /> Save notes
                 </SubmitButton>
               </ActionForm>
@@ -254,7 +266,12 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
               working="Polaris is drafting concepts from the research…"
               note="Usually under a minute."
             >
-              <SubmitButton variant="gradient-outline" working pendingLabel="Drafting concepts…">
+              <SubmitButton
+                variant="gradient-outline"
+                working
+                pendingLabel="Drafting concepts…"
+                upToDate={conceptsUpToDate(prospect.updated_at, concepts ?? [])}
+              >
                 <Sparkles /> {concepts?.length ? "Redraft concepts" : "Draft concepts"}
               </SubmitButton>
             </AiStreamForm>
@@ -327,10 +344,17 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                         </Field>
                       </div>
                       <Field id={`title-${c.id}`} label="Title">
-                        <Input id={`title-${c.id}`} name="title" defaultValue={c.title} required />
+                        <Input id={`title-${c.id}`} name="title" defaultValue={c.title} required placeholder="e.g. Co-branded launch series" />
                       </Field>
                       <Field id={`description-${c.id}`} label="The idea">
-                        <Textarea id={`description-${c.id}`} name="description" rows={5} defaultValue={c.description} required />
+                        <Textarea
+                          id={`description-${c.id}`}
+                          name="description"
+                          rows={5}
+                          defaultValue={c.description}
+                          required
+                          placeholder="e.g. A three-part video series showing their product in real client workflows."
+                        />
                       </Field>
                       <Field id={`rationale-${c.id}`} label="Why they would say yes now">
                         <Textarea
@@ -338,6 +362,7 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                           name="commercial_rationale"
                           rows={4}
                           defaultValue={c.commercial_rationale ?? ""}
+                          placeholder="e.g. They launch a new product line in Q2 and are hiring creative partners now."
                         />
                       </Field>
                       {c.signal_ids.length > 0 && (
@@ -352,7 +377,7 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                           )}
                         </div>
                       )}
-                      <SubmitButton variant="ghost" className="-ml-3">
+                      <SubmitButton variant="ghost" className="-ml-3" requireChanges>
                         Save changes
                       </SubmitButton>
                     </ActionForm>
@@ -397,7 +422,15 @@ export default async function PitchWorkspacePage(props: PageProps<"/pitch/[id]">
                 working="Polaris is writing the email in the profile's voice…"
                 note="Usually under a minute. The draft appears below as it is written."
               >
-                <SubmitButton variant="gradient-outline" working pendingLabel="Writing the email…">
+                <SubmitButton
+                  variant="gradient-outline"
+                  working
+                  pendingLabel="Writing the email…"
+                  upToDate={emailUpToDate(email?.created_at, {
+                    prospectUpdatedAt: prospect.updated_at,
+                    conceptUpdatedAt: selected?.updated_at,
+                  })}
+                >
                   <Sparkles /> {email ? "Rewrite both" : "Write email"}
                 </SubmitButton>
               </AiStreamForm>
@@ -470,7 +503,7 @@ function PitchEditor({
       )}
       <ActionForm action={savePitch.bind(null, prospectId, pitch.id)} className="space-y-4">
         <Field id={`subject-${pitch.id}`} label="Subject line">
-          <Input id={`subject-${pitch.id}`} name="subject" defaultValue={pitch.subject ?? ""} />
+          <Input id={`subject-${pitch.id}`} name="subject" defaultValue={pitch.subject ?? ""} placeholder="e.g. An idea for your Q2 creator launch" />
         </Field>
         <Field id={`body-${pitch.id}`} label="Body" hint={`${wordCount(pitch.body)} words saved`}>
           <Textarea
@@ -478,11 +511,12 @@ function PitchEditor({
             name="body"
             rows={12}
             defaultValue={pitch.body}
+            placeholder="e.g. Hi Maria, I saw your team is launching… (keep it under 120 words)"
             className="text-[0.9375rem] leading-7"
             required
           />
         </Field>
-        <SubmitButton variant="gradient-outline">Save edits</SubmitButton>
+        <SubmitButton variant="gradient-outline" requireChanges>Save edits</SubmitButton>
       </ActionForm>
       <div className="mt-auto flex flex-wrap items-center gap-3 border-t pt-4">
         {approved ? (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, Check, Clock, Lightbulb, RefreshCw, Users } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { rescoreUpToDate, researchUpToDate } from "@/lib/reruns";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { NextAction } from "@/components/next-action";
 import { PolarisWorking } from "@/components/polaris-working";
@@ -62,11 +63,19 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
   const { data: prospect } = await supabase.from("prospects").select("*").eq("id", id).maybeSingle<Prospect>();
   if (!prospect) notFound();
 
-  const [{ data: company }, { data: profile }, { data: briefs }, { active }] = await Promise.all([
+  const [{ data: company }, { data: profile }, { data: briefs }, { active }, { data: latestIcp }] = await Promise.all([
     supabase.from("companies").select("*").eq("id", prospect.company_id).single<Company>(),
     supabase.from("profiles").select("id, name").eq("id", prospect.profile_id).single<{ id: string; name: string }>(),
     supabase.from("briefs").select("*").eq("prospect_id", id).order("version", { ascending: false }).returns<Brief[]>(),
     activeProfile(),
+    // When the ICP last changed, so Re-score is active only after a change (missing before migration 20261128000000).
+    supabase
+      .from("icps")
+      .select("updated_at")
+      .eq("profile_id", prospect.profile_id)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ updated_at: string }>(),
   ]);
   if (!company || !profile) notFound();
 
@@ -104,7 +113,12 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
           <>
             {status !== "researching" && (
               <ActionForm action={researchProspect.bind(null, prospect.id)}>
-                <SubmitButton variant="gradient-outline" working pendingLabel="Starting research…">
+                <SubmitButton
+                  variant="gradient-outline"
+                  working
+                  pendingLabel="Starting research…"
+                  upToDate={status === "failed" ? null : researchUpToDate(brief?.researched_at)}
+                >
                   <RefreshCw /> {!brief ? "Research company" : status === "failed" ? "Retry research" : "Refresh research"}
                 </SubmitButton>
               </ActionForm>
@@ -147,7 +161,13 @@ export default async function BriefPage(props: PageProps<"/intelligence/[id]">) 
       )}
 
       {shownBrief && (
-        <BriefBody brief={shownBrief} prospect={prospect} signalById={signalById} running={status === "researching"} />
+        <BriefBody
+          brief={shownBrief}
+          prospect={prospect}
+          signalById={signalById}
+          running={status === "researching"}
+          icpUpdatedAt={latestIcp?.updated_at ?? null}
+        />
       )}
 
       {shownBrief && isAdmin && (
@@ -215,11 +235,13 @@ function BriefBody({
   prospect,
   signalById,
   running,
+  icpUpdatedAt,
 }: {
   brief: Brief;
   prospect: Prospect;
   signalById: Map<string, Signal>;
   running: boolean;
+  icpUpdatedAt: string | null;
 }) {
   const sources = brief.signal_ids.map((i) => signalById.get(i)).filter((s): s is Signal => Boolean(s));
 
@@ -237,7 +259,13 @@ function BriefBody({
             </Section>
 
             <Section n={2} title="Fit score">
-              <FitScore brief={brief} prospectId={prospect.id} signalById={signalById} running={running} />
+              <FitScore
+                brief={brief}
+                prospectId={prospect.id}
+                signalById={signalById}
+                running={running}
+                icpUpdatedAt={icpUpdatedAt}
+              />
             </Section>
 
             <Section n={3} title="Why now">
@@ -391,11 +419,13 @@ function FitScore({
   prospectId,
   signalById,
   running,
+  icpUpdatedAt,
 }: {
   brief: Brief;
   prospectId: string;
   signalById: Map<string, Signal>;
   running: boolean;
+  icpUpdatedAt: string | null;
 }) {
   const goal = brief.deal_goal;
   const defs = criteriaFor(goal);
@@ -484,7 +514,14 @@ function FitScore({
         </span>
         {goal && !running && (
           <ActionForm action={rescoreProspect.bind(null, prospectId)} className="ml-auto">
-            <SubmitButton variant="ghost" size="sm" working pendingLabel="Re-scoring…" title="Re-score from the saved findings, with no new web research">
+            <SubmitButton
+              variant="ghost"
+              size="sm"
+              working
+              pendingLabel="Re-scoring…"
+              title="Re-score from the saved findings, with no new web research"
+              upToDate={rescoreUpToDate(brief.updated_at, icpUpdatedAt)}
+            >
               <RefreshCw /> Re-score
             </SubmitButton>
           </ActionForm>
@@ -558,7 +595,7 @@ function DecisionForm({ prospect, recommendation }: { prospect: Prospect; recomm
           Reason, if you choose differently from Polaris{recommendation ? ` (${RECOMMENDATION_LABEL[recommendation].toLowerCase()})` : ""}{" "}
           <span className="font-normal text-muted-foreground">(optional)</span>
         </span>
-        <Textarea name="reason" rows={2} />
+        <Textarea name="reason" rows={2} placeholder="e.g. We already have a warm intro to their marketing lead" />
       </label>
     </ActionForm>
   );

@@ -9,6 +9,7 @@ import { ListTextarea } from "@/components/list-textarea";
 import { Textarea } from "@/components/ui/textarea";
 import { brand } from "@/config/brand";
 import type { Icp, Profile } from "@/lib/types";
+import { icpUpToDate } from "@/lib/reruns";
 import { approveIcp, saveIcp } from "../actions";
 
 // Grey examples show while a box is empty and fade when it is clicked (owner review, 18 Nov 2026).
@@ -87,7 +88,12 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
             note="Up to a minute."
             panelClassName="max-w-xs"
           >
-            <SubmitButton variant="gradient-outline" working pendingLabel="Drafting…">
+            <SubmitButton
+              variant="gradient-outline"
+              working
+              pendingLabel="Drafting…"
+              upToDate={icpUpToDate(profile.updated_at, latest?.updated_at)}
+            >
               <Sparkles /> Draft with AI
             </SubmitButton>
           </AiStreamForm>
@@ -164,7 +170,7 @@ export function IcpTab({ profile, icps }: { profile: Profile; icps: Icp[] }) {
                 </Field>
               </div>
             </fieldset>
-            <SubmitButton variant="gradient-outline">Save draft</SubmitButton>
+            <SubmitButton variant="gradient-outline" requireChanges>Save draft</SubmitButton>
           </ActionForm>
 
           {latest && !latest.approved && (

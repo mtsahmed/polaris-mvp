@@ -24,6 +24,7 @@ export function DeleteWorkspaceForm({ workspaceName }: { workspaceName: string }
           id="confirm"
           name="confirm"
           autoComplete="off"
+          placeholder={workspaceName}
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
           className="h-10 max-w-md"

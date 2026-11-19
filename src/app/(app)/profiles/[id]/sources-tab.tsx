@@ -79,7 +79,7 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
               <Field id="title" label="Label (optional)">
                 <Input id="title" name="title" placeholder="Case studies" />
               </Field>
-              <SubmitButton variant="gradient-outline" pendingLabel="Adding…">Add link</SubmitButton>
+              <SubmitButton variant="gradient-outline" pendingLabel="Adding…" requireChanges>Add link</SubmitButton>
             </ActionForm>
           </CardContent>
         </Card>
@@ -106,10 +106,10 @@ export function SourcesTab({ profileId, sources }: { profileId: string; sources:
           <ActionForm action={saveQuestionnaire.bind(null, profileId)} className="space-y-5">
             {QUESTIONNAIRE.map((q) => (
               <Field key={q.key} id={q.key} label={q.label}>
-                <Textarea id={q.key} name={q.key} rows={3} defaultValue={answers[q.key] ?? ""} />
+                <Textarea id={q.key} name={q.key} rows={3} defaultValue={answers[q.key] ?? ""} placeholder={q.example} />
               </Field>
             ))}
-            <SubmitButton variant="gradient-outline">Save answers</SubmitButton>
+            <SubmitButton variant="gradient-outline" requireChanges>Save answers</SubmitButton>
           </ActionForm>
         </CardContent>
       </Card>

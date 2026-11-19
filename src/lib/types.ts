@@ -84,6 +84,7 @@ export type Icp = {
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  updated_at?: string; // migration 20261128000000
 };
 
 // ---------------------------------------------------------------------------
@@ -169,6 +170,7 @@ export type Concept = {
   selected: boolean;
   model: string | null;
   created_at: string;
+  updated_at?: string; // migration 20261128000000
 };
 
 export type PitchKind = "first_contact" | "follow_up" | "call_talking_points";

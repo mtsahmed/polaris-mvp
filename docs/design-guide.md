@@ -101,9 +101,25 @@ disabled `outline` button with a check ("Applied to profile") until a new draft 
 
 ## Example text in form fields
 
-Empty list fields show a grey example as the placeholder, starting with "e.g.", that fades out when
-the field gets focus (`ListTextarea`, `src/components/list-textarea.tsx`). Examples are never saved
-and never shown as data. List fields show a live "N items" count.
+Every text field shows a pale example as its placeholder, starting with "e.g." (or a short hint such as
+"At least 8 characters" for passwords), and the example fades out when the field gets focus. The fade
+is built into `Input` and `Textarea` (`src/components/ui/`), so new fields only need a `placeholder`.
+Examples are never saved and never shown as data. List fields (`ListTextarea`) also show a live
+"N items" count. Questionnaire examples live next to their questions in `src/lib/questionnaire.ts`.
+
+## Inactive until there is something new
+
+Agreed 19 November 2026 (owner review), phones and desktop alike.
+
+- **Save buttons** (`<SubmitButton requireChanges>`): inactive until a field in the form differs from
+  how it loaded; undoing the edit makes them inactive again. After a save the saved values are the new
+  starting point. Buttons that log a new event (Save to timeline) or start a first run stay active.
+- **AI re-run buttons** (`<SubmitButton upToDate={…}>`): inactive while the result is up to date with
+  its inputs, using the rules in `src/lib/reruns` (insights: same sources; ICP: profile unchanged;
+  concepts: research and notes unchanged; email: concept and notes unchanged; Re-score: ICP unchanged;
+  web research: less than 7 days old, unless it failed). The first run of a step is always active.
+- The reason sits on a wrapper around the button (a disabled button gets no hover), and on touch
+  screens it is also printed under the button in the side-note style.
 
 ## Collapsed result cards
 
@@ -111,6 +127,14 @@ Agreed 18 November 2026. Where a page lists many AI results (Discovery suggestio
 collapsed to one line (name, segment badge, size and location when known) with a down chevron to
 open it. No separate summary table above the cards (tried and removed the same day: it repeated the
 cards).
+
+## Phone navigation
+
+Agreed 19 November 2026. Below tablet width the app sidebar is closed by default
+(`src/components/sidebar-shell.tsx`). A slim top bar with a round three-bar menu button and the brand
+sits at the top; it slides away while scrolling down and returns on any scroll up. The button opens the
+sidebar as a drawer from the left over a dimmed page; tapping outside, the close button, Escape or
+opening another page closes it. Tablet and desktop keep the collapsible sidebar.
 
 ## Landing feature cards
 

@@ -97,6 +97,7 @@ export function DeleteUserDialog({
                 id={`confirm-${userId}`}
                 name="confirm"
                 autoComplete="off"
+                placeholder={email}
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
                 className="h-10"

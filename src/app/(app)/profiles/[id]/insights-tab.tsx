@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { OPEN_ANSWERS_LOCATION, parseQa } from "@/lib/questionnaire";
 import type { Profile, ProfileIntelligence, ProfileSource } from "@/lib/types";
+import { insightsUpToDate } from "@/lib/reruns";
 import { applyIntelligence, saveOpenAnswers } from "../actions";
 
 // True when the profile already holds exactly what this draft says, so applying again would
@@ -81,7 +82,12 @@ export function InsightsTab({ profile, sources }: { profile: Profile; sources: P
               note="Up to a minute."
               panelClassName="max-w-xs"
             >
-              <SubmitButton variant="gradient-outline" working pendingLabel="Reading sources…">
+              <SubmitButton
+                variant="gradient-outline"
+                working
+                pendingLabel="Reading sources…"
+                upToDate={insightsUpToDate(profile.intelligence_generated_at, intel?.source_ids, sources)}
+              >
                 <Sparkles /> {intel ? "Regenerate draft" : "Generate draft"}
               </SubmitButton>
             </AiStreamForm>
@@ -184,7 +190,7 @@ export function InsightsTab({ profile, sources }: { profile: Profile; sources: P
                       </div>
                     ))}
                   </div>
-                  <SubmitButton variant="gradient-outline" pendingLabel="Saving…">Save answers</SubmitButton>
+                  <SubmitButton variant="gradient-outline" pendingLabel="Saving…" requireChanges>Save answers</SubmitButton>
                 </ActionForm>
               </CardContent>
             </Card>

@@ -45,6 +45,7 @@ export type Brief = {
   researched_at: string | null;
   created_by: string | null;
   created_at: string;
+  updated_at?: string; // migration 20261128000000
 };
 
 export const BRIEF_STALE_DAYS = 30;

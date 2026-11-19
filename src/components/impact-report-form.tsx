@@ -18,7 +18,7 @@ const GOALS: { value: Goal; label: string }[] = [
 ];
 
 const field =
-  "h-11 w-full rounded-xl border border-sidebar-border bg-sidebar px-3.5 text-[0.9375rem] text-sidebar-foreground placeholder:text-sidebar-foreground/45 outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/25";
+  "h-11 w-full rounded-xl border border-sidebar-border bg-sidebar px-3.5 text-[0.9375rem] text-sidebar-foreground placeholder:text-sidebar-foreground/45 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-0 outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/25";
 
 export function ImpactReportForm() {
   const [goal, setGoal] = useState<Goal>("partnerships");
@@ -114,18 +114,18 @@ export function ImpactReportForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1.5">
                   <span className="text-sm font-medium">Name</span>
-                  <input name="name" required maxLength={120} autoComplete="name" className={field} />
+                  <input name="name" required maxLength={120} autoComplete="name" placeholder="e.g. Jordan Lee" className={field} />
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-sm font-medium">Work email</span>
-                  <input name="email" type="email" required maxLength={254} autoComplete="email" className={field} />
+                  <input name="email" type="email" required maxLength={254} autoComplete="email" placeholder="e.g. jordan@yourcompany.com" className={field} />
                 </label>
               </div>
               <label className="block space-y-1.5">
                 <span className="text-sm font-medium">
                   Company <span className="font-normal text-sidebar-foreground/60">(optional)</span>
                 </span>
-                <input name="company" maxLength={160} autoComplete="organization" className={field} />
+                <input name="company" maxLength={160} autoComplete="organization" placeholder="e.g. Northwind Studio" className={field} />
               </label>
               <fieldset className="space-y-1.5">
                 <legend className="text-sm font-medium">You are looking for</legend>

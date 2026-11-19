@@ -21,20 +21,20 @@ export function SignUpForm() {
     <form action={action} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" autoComplete="name" required maxLength={100} defaultValue={state.values?.name} className="h-10" />
+        <Input id="name" name="name" autoComplete="name" required maxLength={100} defaultValue={state.values?.name} placeholder="e.g. Jordan Lee" className="h-10" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} className="h-10" />
+        <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} placeholder="e.g. you@company.com" className="h-10" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <PasswordInput id="password" name="password" autoComplete="new-password" minLength={8} required className="h-10" />
+        <PasswordInput id="password" name="password" autoComplete="new-password" minLength={8} required placeholder="At least 8 characters" className="h-10" />
         <p className="text-sm text-muted-foreground">At least 8 characters.</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirm">Re-enter password</Label>
-        <PasswordInput id="confirm" name="confirm" autoComplete="new-password" minLength={8} required className="h-10" />
+        <PasswordInput id="confirm" name="confirm" autoComplete="new-password" minLength={8} required placeholder="Type it again" className="h-10" />
       </div>
 
       {state.error && (

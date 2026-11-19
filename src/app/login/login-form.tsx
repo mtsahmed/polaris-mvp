@@ -18,7 +18,7 @@ export function LoginForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required className="h-10" />
+        <Input id="email" name="email" type="email" autoComplete="email" required placeholder="e.g. you@company.com" className="h-10" />
       </div>
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-3">
@@ -34,6 +34,7 @@ export function LoginForm({ next }: { next: string }) {
           id="password"
           name="password"
           autoComplete="current-password"
+          placeholder="Your password"
           minLength={8}
           required
           className="h-10"

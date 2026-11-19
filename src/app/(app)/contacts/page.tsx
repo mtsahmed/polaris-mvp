@@ -165,22 +165,22 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
             </summary>
             <ActionForm action={addContact.bind(null, p.id)} resetOnSuccess className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field id={`name-${p.id}`} label="Name">
-                <Input id={`name-${p.id}`} name="name" required />
+                <Input id={`name-${p.id}`} name="name" required placeholder="e.g. Maria Lopez" />
               </Field>
               <Field id={`title-${p.id}`} label="Job title">
-                <Input id={`title-${p.id}`} name="title" />
+                <Input id={`title-${p.id}`} name="title" placeholder="e.g. Head of Partnerships" />
               </Field>
               <Field id={`email-${p.id}`} label="Work email" hint="Saved as unverified: Polaris has not checked it.">
-                <Input id={`email-${p.id}`} name="email" type="email" />
+                <Input id={`email-${p.id}`} name="email" type="email" placeholder="e.g. maria@company.com" />
               </Field>
               <Field id={`phone-${p.id}`} label="Office or main line">
-                <Input id={`phone-${p.id}`} name="phone" />
+                <Input id={`phone-${p.id}`} name="phone" placeholder="e.g. +1 512 555 0100" />
               </Field>
               <Field id={`mobile-${p.id}`} label="Mobile">
-                <Input id={`mobile-${p.id}`} name="mobile" />
+                <Input id={`mobile-${p.id}`} name="mobile" placeholder="e.g. +1 512 555 0123" />
               </Field>
               <Field id={`whatsapp-${p.id}`} label="WhatsApp">
-                <Input id={`whatsapp-${p.id}`} name="whatsapp" />
+                <Input id={`whatsapp-${p.id}`} name="whatsapp" placeholder="e.g. +1 512 555 0123" />
               </Field>
               <Field id={`found-${p.id}`} label="Where you found them">
                 <select
@@ -195,7 +195,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
                 </select>
               </Field>
               <Field id={`other-${p.id}`} label="If Other, where" hint="For example: a conference speaker list.">
-                <Input id={`other-${p.id}`} name="found_at_other" />
+                <Input id={`other-${p.id}`} name="found_at_other" placeholder="e.g. SXSW 2026 speaker list" />
               </Field>
               <div className="sm:col-span-2">
                 <Field id={`url-${p.id}`} label="Page link (optional)" hint="The page the details are on, such as the Google Maps listing.">
@@ -203,7 +203,7 @@ export default async function ContactsPage(props: PageProps<"/contacts">) {
                 </Field>
               </div>
               <div className="sm:col-span-2">
-                <SubmitButton variant="gradient-outline">
+                <SubmitButton variant="gradient-outline" requireChanges>
                   <UserPlus /> Save contact
                 </SubmitButton>
               </div>
@@ -430,7 +430,7 @@ function ContactsTable({ contacts }: { contacts: Contact[] }) {
                     aria-label={`Mobile for ${c.name} (unverified)`}
                     className="h-8 w-36 font-mono text-[13px]"
                   />
-                  <SubmitButton variant="ghost" className="h-8 px-2" pendingLabel="…">
+                  <SubmitButton variant="ghost" className="h-8 px-2" pendingLabel="…" requireChanges>
                     <Save aria-label="Save mobile" />
                   </SubmitButton>
                 </ActionForm>

@@ -33,7 +33,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
-      <SidebarShell initialCollapsed={collapsed}>
+      <SidebarShell
+        initialCollapsed={collapsed}
+        mobileBrand={
+          <Link href="/" title="Polaris home page" className="rounded-xl transition-opacity hover:opacity-85">
+            <BrandMark />
+          </Link>
+        }
+      >
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-24 size-80 rounded-full opacity-20 blur-3xl bg-brand-gradient" />
         <div className="relative flex items-center justify-between gap-2 md:group-data-[collapsed=true]/sidebar:flex-col">
           <Link

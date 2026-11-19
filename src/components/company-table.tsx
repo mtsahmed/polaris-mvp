@@ -199,7 +199,7 @@ function NotesCell({ id, initial, company }: { id: string; initial: string; comp
       placeholder="Add a note"
       aria-label={`Notes for ${company}`}
       className={cn(
-        "field-sizing-content min-h-9 max-h-[5.25rem] w-full resize-none overflow-y-auto rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-[13px] italic leading-[18px] outline-none transition-colors placeholder:text-muted-foreground/50 hover:border-border focus:border-ring focus:bg-background",
+        "field-sizing-content min-h-9 max-h-[5.25rem] w-full resize-none overflow-y-auto rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-[13px] italic leading-[18px] outline-none transition-colors placeholder:text-muted-foreground/50 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-0 hover:border-border focus:border-ring focus:bg-background",
         pending && "opacity-60",
       )}
     />

@@ -117,7 +117,7 @@ export default async function PitchStudioPage(props: PageProps<"/pitch">) {
                     </>
                   }
                 >
-                  <Textarea id="notes" name="notes" rows={3} />
+                  <Textarea id="notes" name="notes" rows={3} placeholder="e.g. Met their CMO at a conference; focus on co-marketing, not sponsorship." />
                 </Field>
                 <SubmitButton variant="gradient-outline" working pendingLabel="Researching…">
                   <Search /> Research company

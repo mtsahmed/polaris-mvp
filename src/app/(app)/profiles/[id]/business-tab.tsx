@@ -16,7 +16,7 @@ export function BusinessTab({ profile }: { profile: Profile }) {
         </CardHeader>
         <CardContent className="grid gap-5 sm:grid-cols-2">
           <Field id="name" label="Name">
-            <Input id="name" name="name" defaultValue={profile.name} required maxLength={160} />
+            <Input id="name" name="name" defaultValue={profile.name} required maxLength={160} placeholder="e.g. Northwind Studio" />
           </Field>
           <Field id="type" label="Profile type">
             <NativeSelect id="type" name="type" defaultValue={profile.type}>
@@ -30,13 +30,13 @@ export function BusinessTab({ profile }: { profile: Profile }) {
           </Field>
           <div className="sm:col-span-2">
             <Field id="website" label="Website">
-              <Input id="website" name="website" defaultValue={profile.website ?? ""} inputMode="url" />
+              <Input id="website" name="website" defaultValue={profile.website ?? ""} inputMode="url" placeholder="e.g. https://northwind.studio" />
             </Field>
           </div>
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <SubmitButton variant="gradient-outline">Save business info</SubmitButton>
+        <SubmitButton variant="gradient-outline" requireChanges>Save business info</SubmitButton>
       </div>
     </ActionForm>
   );

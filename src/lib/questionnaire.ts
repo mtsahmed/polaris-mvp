@@ -1,9 +1,25 @@
 export const QUESTIONNAIRE = [
-  { key: "what_you_do", label: "What do you do, in a sentence or two?" },
-  { key: "best_work", label: "Name two or three pieces of work you are proudest of, with results if you have them." },
-  { key: "audience", label: "Who is your audience or client base? Size, demographics, platforms." },
-  { key: "ideal_partner", label: "What kind of partner or brand would be a dream fit, and why?" },
-  { key: "avoid", label: "Anything you will not do, or brands you will not work with?" },
+  { key: "what_you_do", label: "What do you do, in a sentence or two?", example: "e.g. We make short-form video series for B2B tech brands." },
+  {
+    key: "best_work",
+    label: "Name two or three pieces of work you are proudest of, with results if you have them.",
+    example: "e.g. Launch series for Acme Cloud: 1.2M views and 300 demo requests in a month.",
+  },
+  {
+    key: "audience",
+    label: "Who is your audience or client base? Size, demographics, platforms.",
+    example: "e.g. Marketing teams at US SaaS companies; 40k followers on LinkedIn and YouTube.",
+  },
+  {
+    key: "ideal_partner",
+    label: "What kind of partner or brand would be a dream fit, and why?",
+    example: "e.g. A design-tool company launching to creative teams, because our clients already use them.",
+  },
+  {
+    key: "avoid",
+    label: "Anything you will not do, or brands you will not work with?",
+    example: "e.g. No gambling, tobacco or political campaigns.",
+  },
 ] as const;
 
 // Answers typed under "Open questions" on the Insights tab are kept as their own source (same

@@ -32,20 +32,50 @@ export function ProfileDetailsTab({ profile }: { profile: Profile }) {
         </CardHeader>
         <CardContent className="space-y-5">
           <Field id="positioning" label="Positioning">
-            <Textarea id="positioning" name="positioning" rows={3} defaultValue={profile.positioning ?? ""} />
+            <Textarea
+              id="positioning"
+              name="positioning"
+              rows={3}
+              defaultValue={profile.positioning ?? ""}
+              placeholder="e.g. An Austin video studio that turns product launches into short-form series for B2B brands."
+            />
           </Field>
           <Field id="audience" label="Audience">
-            <Textarea id="audience" name="audience" rows={2} defaultValue={profile.audience ?? ""} />
+            <Textarea
+              id="audience"
+              name="audience"
+              rows={2}
+              defaultValue={profile.audience ?? ""}
+              placeholder="e.g. Marketing leads at US SaaS companies with 50–500 staff"
+            />
           </Field>
           <div className="grid gap-5 sm:grid-cols-3">
             <Field id="services" label="Services" hint="One per line">
-              <Textarea id="services" name="services" rows={6} defaultValue={profile.services.join("\n")} />
+              <Textarea
+                id="services"
+                name="services"
+                rows={6}
+                defaultValue={profile.services.join("\n")}
+                placeholder={"e.g.\nBrand films\nShort-form social series\nLaunch campaigns"}
+              />
             </Field>
             <Field id="strengths" label="Strengths" hint="One per line">
-              <Textarea id="strengths" name="strengths" rows={6} defaultValue={profile.strengths.join("\n")} />
+              <Textarea
+                id="strengths"
+                name="strengths"
+                rows={6}
+                defaultValue={profile.strengths.join("\n")}
+                placeholder={"e.g.\n10 years in B2B video\nIn-house editors\nFast turnaround"}
+              />
             </Field>
             <Field id="objectives" label="Objectives" hint="One per line">
-              <Textarea id="objectives" name="objectives" rows={6} defaultValue={profile.objectives.join("\n")} />
+              <Textarea
+                id="objectives"
+                name="objectives"
+                rows={6}
+                defaultValue={profile.objectives.join("\n")}
+                placeholder={"e.g.\nThree new retainer clients this year\nOne brand partnership a quarter"}
+              />
             </Field>
           </div>
         </CardContent>
@@ -87,7 +117,7 @@ export function ProfileDetailsTab({ profile }: { profile: Profile }) {
       </Card>
 
       <div className="sticky bottom-4 flex justify-end">
-        <SubmitButton variant="gradient-outline">Save profile</SubmitButton>
+        <SubmitButton variant="gradient-outline" requireChanges>Save profile</SubmitButton>
       </div>
     </ActionForm>
   );
