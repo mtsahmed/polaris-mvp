@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/opengraph-image",
   "/llms.txt",
   "/BingSiteAuth.xml", // Bing Webmaster Tools site verification (public/BingSiteAuth.xml)
+  "/ccf5a106b3f9490fade1bab6bed13bc2.txt", // IndexNow key file (Bing, Yandex and others); the key is public by design
   "/.well-known",
   "/privacy",
   "/terms",
